@@ -208,3 +208,91 @@ it needs a batch of that person's trials before the whitener can be estimated.
 Those trials are *unlabelled*, which is a far lighter burden than a labelled
 calibration session, but it is not zero. A truly online system would need to
 estimate the whitener incrementally, and I have not tested that.
+
+### B. Is the number an artifact of how I split the data?
+
+The headline honest number, leave-one-subject-out on imagery:
+
+| pipeline | random 5-fold (wrong) | **LOSO (honest)** | gap |
+|---|---|---|---|
+| csp_lda | 0.541 | 0.534 ± 0.058 | +0.7 pp |
+| tangent_space | 0.619 | **0.556 ± 0.084** | +6.3 pp |
+
+**I predicted a 15–30 point gap and did not get one.** That prediction is
+falsified and the explanation is more interesting than the prediction was.
+
+My first hypothesis was capacity: a linear model fit globally across pooled
+subjects cannot exploit knowing who the test subject is, because subject
+identity carries no information about the left/right label — every subject
+contributes both classes in balance. So I built a capacity ladder over one
+shared feature space (B4):
+
+| model | random 5-fold | LOSO | gap |
+|---|---|---|---|
+| logistic regression | 0.619 | 0.556 | +6.3 pp |
+| RBF SVM | 0.604 | 0.590 | +1.4 pp |
+| 1-NN | 0.516 | 0.505 | +1.0 pp |
+
+**That hypothesis is falsified too.** Capacity did not widen the gap — 1-NN has
+the *narrowest* gap, because 1-NN in a 2080-dimensional tangent space is at
+chance under both protocols and a model that cannot memorise usefully cannot
+leak.
+
+So where does the published inflation come from? Not from pooling subjects. The
+answer is **windowing** (B5, `scripts/leakage.py`). Many EEG pipelines cut each
+trial into several overlapping windows to multiply their sample count, then
+split those windows at random. Two windows from the same trial that overlap by
+87.5% are very nearly the same data, so the test set is full of near-duplicates
+of training rows. Rebuilding exactly that setup — 1350 trials → 6750 windows,
+2.0 s wide, 0.25 s apart:
+
+| split | csp_lda | **1-NN on log-variance** |
+|---|---|---|
+| random 5-fold over **windows** | 0.537 | **0.979** |
+| 5-fold grouped by **trial** | 0.484 | 0.539 |
+| leave-one-**subject**-out | 0.545 | 0.517 |
+| **window leakage** | +5.3 pp | **+44.0 pp** |
+| **subject leakage** | −6.1 pp | +2.2 pp |
+
+**0.979 from a model that has learned nothing about motor imagery.** Its nearest
+neighbour is simply the window 0.25 s away, from the same trial, sitting in the
+training set. That single number reproduces the 84–89% range reported in the
+literature for this dataset, and it decomposes cleanly: 44 points of it are
+window overlap, 2 points are subject pooling.
+
+The practical consequence is that the much-repeated advice "use subject-wise
+splits" is necessary but nowhere near sufficient. Grouping by subject *and*
+splitting windows at random still gives you 0.979. You have to group by trial.
+
+### C. Baselines beyond chance
+
+**C1 — permutation null.** Labels shuffled *within* each subject, then the
+entire LOSO rerun, 200 times. Within-subject shuffling matters: a global shuffle
+would also destroy each subject's class balance and make the null easier than
+the real problem.
+
+| | value |
+|---|---|
+| null mean | 0.501 |
+| null 95th percentile | 0.519 |
+| null maximum over 200 shuffles | 0.531 |
+| **observed** | **0.556** |
+| **p** | **0.005** |
+
+The result clears its own null, but note how tight the null is: the honest 0.556
+sits only 3.7 points above the 95th percentile. Chance is 0.50, but the number
+that matters for "is this real" is 0.519, not 0.50.
+
+**C2 — channel ablation.** Is the signal where sensorimotor physiology says it
+should be?
+
+| channels | accuracy |
+|---|---|
+| motor only (C3/Cz/C4 + neighbours, 9 ch) | **0.580 ± 0.106** |
+| all 64 | 0.556 ± 0.084 |
+| non-motor only (frontal + occipital, 11 ch) | 0.521 ± 0.071 |
+
+Non-motor channels drop toward chance, which is the expected result and an
+argument that blinks and drift are not carrying the classification. Note also
+that **9 motor channels beat all 64** — more input is worse here, which is the
+same over-parameterisation story F1 tells below.
