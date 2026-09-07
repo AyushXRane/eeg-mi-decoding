@@ -1,3 +1,11 @@
 imagined (1350, 64, 481)  executed (1350, 64, 481)  30 subjects  (3s)
 
 == C. baselines beyond chance ==
+C1 permutation null: mean 0.501, 95th pct 0.519, max 0.531 | observed 0.556, p=0.0050 (200 shuffles)
+  -> results/C1_permutation.csv (201 rows)
+C2 all_64           (64 ch) 0.556 +/- 0.084
+C2 motor_only       ( 9 ch) 0.580 +/- 0.106
+C2 non_motor_only   (11 ch) 0.521 +/- 0.071
+  -> results/C2_channels.csv (3 rows)
+C3 imagined  8-30 Hz  0.556 +/- 0.084
+C3 imagined  30-70 Hz  0.526 +/- 0.053

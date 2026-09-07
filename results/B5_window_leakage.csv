@@ -1,0 +1,11 @@
+model,split,acc,sd
+csp_lda,random_over_windows,0.5373333333333333,0.005937026639855962
+csp_lda,grouped_by_trial,0.48385185185185187,0.04423258145307308
+csp_lda,grouped_by_subject,0.5448888888888889,0.07959237716048952
+csp_lda,gap_window_leak,0.05348148148148146,nan
+csp_lda,gap_subject_leak,-0.061037037037037,nan
+knn_1_logvar,random_over_windows,0.9785185185185185,0.0064745995210110305
+knn_1_logvar,grouped_by_trial,0.5389629629629631,0.010952948378829349
+knn_1_logvar,grouped_by_subject,0.5171851851851852,0.05502841266358996
+knn_1_logvar,gap_window_leak,0.43955555555555537,nan
+knn_1_logvar,gap_subject_leak,0.021777777777777896,nan
