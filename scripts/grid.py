@@ -70,9 +70,13 @@ def block_A(ds, ds_exec, args):
 def block_B(ds, ds_exec, args):
     print("\n== B. is the number an artifact of the split? ==")
     out = []
+    lr = lambda: LogisticRegression(C=1.0, max_iter=2000)
     for name, p in pipes().items():
         f = random_kfold(ds.X, ds.y, p)
-        r = loso(ds.X, ds.y, ds.groups, p)
+        # tangent_space shares its LOSO folds with B4, D5 and F1 -- fit the
+        # unsupervised prefix once and reuse it everywhere.
+        r = (loso_with_features(loso_ts_folds(ds.X, ds.groups), ds.y, ds.groups, lr)
+             if name == "tangent_space" else loso(ds.X, ds.y, ds.groups, p))
         s = summarise(r, name)
         gap = float(np.mean(f)) - s["mean"]
         print(f"B1/B2/B3 {name:14s} kfold {np.mean(f):.3f}  LOSO {s['mean']:.3f} "

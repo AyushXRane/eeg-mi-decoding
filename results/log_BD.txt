@@ -1,0 +1,3 @@
+imagined (1350, 64, 481)  executed (1350, 64, 481)  30 subjects  (3s)
+
+== B. is the number an artifact of the split? ==

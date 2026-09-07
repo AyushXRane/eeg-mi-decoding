@@ -170,3 +170,41 @@ confidence interval roughly 28 points wide. One subject scores 1.00 and another
 0.27; both are consistent with the same underlying ability. **Any per-subject
 number in this dataset, mine or anyone else's, is nearly uninformative on its
 own.** This is why every table here reports a distribution.
+
+### What the shipped model can and cannot do
+
+`predict.py` is handed a single EDF, so it must estimate the Euclidean Alignment
+whitener from that one run's ~15 trials. Training aligns per subject across three
+runs. That is a train/test mismatch, and quoting the grid's LOSO number as if it
+described the CLI would be quietly wrong, so it gets measured directly
+(`scripts/eval_predict.py`, 30 subjects, leave-one-subject-out, csp_lda):
+
+| test-time alignment | accuracy | range | per-subject CIs crossing chance |
+|---|---|---|---|
+| **per-run EA** — what `predict.py` actually does | **0.658 ± 0.165** | 0.38 – 1.00 | 14 / 30 |
+| per-subject EA — what training assumes | 0.641 ± 0.147 | 0.36 – 0.96 | 15 / 30 |
+| **no alignment at test time** | **0.512 ± 0.030** | 0.47 – 0.64 | 30 / 30 |
+
+Three things a skeptical reader should take from this table.
+
+**The mismatch is benign.** Aligning on one run is not worse than aligning on
+three — it is marginally better, probably because a single run is more
+homogeneous than three runs pooled. Worth measuring rather than assuming.
+
+**Essentially all of the cross-subject capability is the alignment, not the
+classifier.** Feed the same trained model unaligned data and it drops to 0.512
+with a standard deviation of 0.03 — indistinguishable from chance for every
+single subject. The classifier alone does not transfer across people at all.
+
+**The number is a group statistic and nothing more.** The range runs 0.38 to
+1.00 and roughly half the subjects individually have confidence intervals that
+include chance. Two genuinely held-out subjects illustrate the point: S031
+scores 0.867 and S032 scores 1.000 on 15 trials each, and neither is evidence of
+anything — a 15-trial estimate carries a ~±25 pp interval. This is why the CLI
+prints that caveat alongside its own accuracy.
+
+**Honest caveat about "zero calibration".** EA on a new subject is transductive:
+it needs a batch of that person's trials before the whitener can be estimated.
+Those trials are *unlabelled*, which is a far lighter burden than a labelled
+calibration session, but it is not zero. A truly online system would need to
+estimate the whitener incrementally, and I have not tested that.
