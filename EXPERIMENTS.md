@@ -60,7 +60,8 @@ systematically *mis*-identifiable across runs.
 | 17 | B1/B2/B3 csp_lda | kfold 0.541, LOSO 0.534, gap **+0.7 pp** | Prediction (15–30 pp) falsified. |
 | 18 | B1/B2/B3 tangent_space | kfold 0.619, LOSO **0.556 ± 0.084**, gap **+6.3 pp** | The honest headline number. |
 | 19 | B4 capacity ladder | linear +6.3 pp, rbf_svm +1.4 pp, knn_1 +1.0 pp | **My follow-up hypothesis also falsified.** More capacity did not widen the gap. 1-NN in a 2080-dim tangent space is at chance (0.505) both ways — it cannot memorise usefully, so it cannot leak. |
-| 20 | B5 window-overlap leakage | see results/B5_window_leakage.csv | The mechanism B3/B4 ruled out: splitting overlapping windows at random. |
+| 20 | B5 window-overlap leakage, csp_lda | random-over-windows 0.537, by-trial 0.484, LOSO 0.545; window leak **+5.3 pp** | Real but small — 4 CSP components cannot memorise near-duplicates. |
+| 20b | B5 window-overlap leakage, 1-NN on log-variance | random-over-windows **0.979**, by-trial 0.539, LOSO 0.517; window leak **+44.0 pp**, subject leak +2.2 pp | **The answer.** Overlapping windows split at random, plus a model that can look up near-duplicates, reproduces the published 84–89% range from a model that learned nothing. Subject pooling contributes ~2 pp; window overlap contributes ~44. |
 | 21 | D1 subject-ID logvar, no EA | **0.960 ± 0.020** (chance 0.033) | |
 | 22 | D2 subject-ID logvar, EA | **0.009 ± 0.010** | EA erases the covariance fingerprint entirely. |
 | 23 | D3 subject-ID rel. log-PSD, no EA | **0.935 ± 0.017** | |
@@ -72,5 +73,26 @@ systematically *mis*-identifiable across runs.
 | 29 | E1 executed → imagined | 0.577 ± 0.107 [0.38–0.84] | **Higher than imagery→imagery LOSO (0.556).** Training on the easier paradigm transfers better than training on the target one. |
 | 30 | F1 fit gap, csp_lda | train 0.548 / test 0.534, **1.4 pp** | 4 CSP components cannot overfit. |
 | 31 | F1 fit gap, tangent_space | train **0.998** / test 0.556, **44.2 pp** | Fits the training set perfectly and generalises at near chance. 2080 tangent-space features from ~1300 trials. This is the clearest overfitting evidence in the project. |
-| 32 | F2 learning curve | 0.529 / 0.551 / 0.511 / 0.547 / 0.538 for n=3/6/10/15/20 | **Flat.** Adding training subjects does not help. Prediction ("rise then plateau") falsified. |
+| 32 | F2 learning curve | 0.529 / 0.551 / 0.511 / 0.547 / 0.538 / 0.580 / **0.613** for n=3/6/10/15/20/25/29 | Noisy and flat through the middle, rising at the top. **Correction: I called this "flat" from a partial run that stopped at n=20; the full sweep rises.** Has not plateaued at 29, so more subjects would likely help. Individual points are resampling noise. |
+| 32b | C1 permutation null | null mean 0.501, 95th pct 0.519, max 0.531; observed 0.556, **p=0.005** | Clears its own null, but by only ~4 pp over the 95th percentile. |
+| 32c | C2 channel ablation | motor-only (9ch) **0.580**, all-64 0.556, non-motor (11ch) 0.521 | Signal is where physiology says. 9 motor channels beat all 64 — same over-parameterisation story as F1. |
+| 32d | C3 EMG control | imagined 8–30 0.556 → 30–70 **0.526**; executed 8–30 0.625 → 30–70 **0.559** | Imagery collapses toward chance outside the ERD band; execution does not. Part of execution's advantage is muscle, not cortex. Prediction confirmed. |
+| 32e | E2 imagined → executed | 0.590 ± 0.088 | Transfer works in both directions. |
+| 32f | E3 pooled → imagined | 0.556 ± 0.093 | Pooling both paradigms buys nothing over imagery alone. |
 | 33 | G1 shipped-model config | per-run EA 0.658 ± 0.165, per-subject EA 0.641, no EA 0.512 | The CLI's real number, and proof the capability is the alignment rather than the classifier. |
+
+### Corrections made during the run
+
+- **F2 "flat" was wrong.** I recorded the learning curve as flat from a partial
+  run that had only reached n=20. The completed sweep rises to 0.613 at n=29.
+  The conclusion changed from "more subjects do not help" to "the curve has not
+  plateaued".
+- **`write_rows` silently dropped columns.** It took its CSV fieldnames from the
+  first row only, so in the heterogeneous F block every `n_train_subjects` and
+  `n_components` value was written as an empty column. Caught when the figure
+  script raised a KeyError. Fixed to take the union of all rows' keys, and block
+  F was rerun. Any block writing mixed row types before this fix would have been
+  affected; F is the only one that did.
+- **Two hypotheses about leakage were falsified before the right one was found**
+  (rows 17–19 and 20b). Recorded in order rather than rewritten to look like a
+  straight line.

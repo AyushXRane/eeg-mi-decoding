@@ -11,3 +11,8 @@ F2 n_train_subjects= 20  0.538 +/- 0.100
 F2 n_train_subjects= 25  0.580 +/- 0.080
 F2 n_train_subjects= 29  0.613 +/- 0.077
 F3 CSP components=2  0.528 +/- 0.071
+F3 CSP components=4  0.534 +/- 0.058
+F3 CSP components=6  0.541 +/- 0.078
+F3 CSP components=8  0.541 +/- 0.083
+  -> results/F_overfitting.csv (71 rows)
+[block F done in 677s]

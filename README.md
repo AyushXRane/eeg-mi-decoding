@@ -416,6 +416,19 @@ it cannot overfit because it has almost nothing to overfit with. The two
 pipelines reach nearly the same test accuracy by completely different routes,
 and only one of them is honest about what it is doing.
 
+**F2 — learning curve.** Accuracy on a held-out subject as a function of how
+many training subjects the model gets:
+
+| n training subjects | 3 | 6 | 10 | 15 | 20 | 25 | 29 |
+|---|---|---|---|---|---|---|---|
+| accuracy | 0.529 | 0.551 | 0.511 | 0.547 | 0.538 | 0.580 | **0.613** |
+
+Noisy and flat through the middle, then rising at the top end. The honest
+reading is that the curve **has not plateaued at 29 subjects**, so extending to
+all 105 usable subjects would probably buy a few points — but the middle of the
+curve is dominated by resampling noise and I would not defend any individual
+point on it.
+
 **F3 — CSP capacity.** 2 / 4 / 6 / 8 components give 0.528 / 0.534 / 0.541 /
 0.541. Essentially flat. More spatial filters is more capacity, not more signal,
 which is consistent with C2 (9 motor channels beat all 64) and with F1.
