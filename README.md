@@ -366,3 +366,56 @@ single most useful thing in this pipeline (+10.7 pp, and without it the shipped
 model is at chance), *and* it leaves a perfect subject fingerprint behind. Both
 are true. It is a good method that is not doing the thing its name suggests it
 does.
+
+### E. Transfer between execution and imagery
+
+| direction | accuracy | range |
+|---|---|---|
+| E1 train executed → test imagined | **0.577 ± 0.107** | 0.38 – 0.84 |
+| E2 train imagined → test executed | **0.590 ± 0.088** | 0.42 – 0.82 |
+| E3 train pooled (exec + imag) → test imagined | 0.556 ± 0.093 | 0.38 – 0.78 |
+| (reference) B2 train imagined → test imagined | 0.556 ± 0.084 | 0.40 – 0.73 |
+
+**Training on execution and testing on imagery (0.577) beats training on imagery
+itself (0.556).** The cross-task, cross-subject problem is *not* harder than the
+cross-subject problem alone, which is not what I expected — E1 demands
+generalisation along two axes at once and still comes out ahead.
+
+The likely reason is signal quality: executed trials have a stronger, cleaner
+sensorimotor response, so the spatial filters estimated from them are better
+estimated, and they transfer. This has a real practical implication for
+calibration burden — collecting *executed* movement data from a new user is
+easier and less error-prone than collecting imagery, and it appears to be at
+least as useful for training.
+
+Pooling both (E3) gives no gain at all over imagery alone. More data does not
+help if it is heterogeneous data; the model has no way to know which paradigm a
+trial came from.
+
+### F. Has it learned or memorised?
+
+**F1 — train vs test accuracy on the same LOSO folds. This is the clearest
+result in the project.**
+
+| pipeline | train | test | **fit gap** |
+|---|---|---|---|
+| csp_lda | 0.548 | 0.534 | **1.4 pp** |
+| tangent_space | **0.998** | 0.556 | **44.2 pp** |
+
+The tangent-space pipeline **fits its training set essentially perfectly and
+generalises at 0.556.** It projects 64×64 covariances into 2080 tangent-space
+features and fits a logistic regression on ~1300 trials — far more parameters
+than samples. It is memorising the training subjects almost completely.
+
+This is the strongest argument in the project for why no deep network appears
+here. My *linear* model already has a 44-point fit gap at ~1300 trials. A
+ConvNet would not fix that; it would deepen it and make it harder to see.
+
+CSP+LDA, by contrast, compresses to 4 spatial filters and has a 1.4-point gap —
+it cannot overfit because it has almost nothing to overfit with. The two
+pipelines reach nearly the same test accuracy by completely different routes,
+and only one of them is honest about what it is doing.
+
+**F3 — CSP capacity.** 2 / 4 / 6 / 8 components give 0.528 / 0.534 / 0.541 /
+0.541. Essentially flat. More spatial filters is more capacity, not more signal,
+which is consistent with C2 (9 motor channels beat all 64) and with F1.
