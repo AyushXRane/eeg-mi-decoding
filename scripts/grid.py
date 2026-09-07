@@ -18,7 +18,7 @@ from src.data import load_dataset, good_subjects, IMAGINED_RUNS, EXECUTED_RUNS
 from src.align import align_by_group
 from src.models import csp_lda, tangent_space, CAPACITY_LADDER
 from src.evaluate import (loso, loso_cross, random_kfold, within_subject,
-                          permutation_null, summarise, binomial_ci)
+                          permutation_null_fast, summarise, binomial_ci)
 from src.probes import (subject_id_probe, logvar_features, psd_features,
                         erd_check, pick_channels, MOTOR, NON_MOTOR)
 from src.report import write_rows, line
@@ -106,8 +106,7 @@ def block_C(ds, ds_exec, args):
     pipe = tangent_space()
 
     # C1: a null built by rerunning the same LOSO on within-subject shuffles.
-    real = summarise(loso(ds.X, ds.y, ds.groups, pipe))["mean"]
-    null = permutation_null(ds.X, ds.y, ds.groups, pipe, n_perm=args.n_perm)
+    null, real = permutation_null_fast(ds.X, ds.y, ds.groups, n_perm=args.n_perm)
     p_val = float((null >= real).mean() + 1 / (len(null) + 1))
     print(f"C1 permutation null: mean {null.mean():.3f}, 95th pct {np.percentile(null,95):.3f}, "
           f"max {null.max():.3f} | observed {real:.3f}, p={p_val:.4f} ({len(null)} shuffles)")

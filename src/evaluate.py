@@ -127,3 +127,51 @@ def summarise(rows, label=""):
     a = np.array([r["acc"] for r in rows])
     return {"label": label, "mean": float(a.mean()), "sd": float(a.std()),
             "min": float(a.min()), "max": float(a.max()), "n_subjects": len(a)}
+
+
+def permutation_null_fast(X, y, groups, n_perm=200, seed=0, n_jobs=-1):
+    """C1 for the tangent-space pipeline, without redoing unsupervised work.
+
+    The pipeline splits cleanly into an unsupervised prefix (trial covariances,
+    then the Riemannian mean and the tangent-space projection around it) and a
+    supervised tail (logistic regression). Shuffling labels cannot change the
+    prefix, so refitting it 200 times computes the same Riemannian mean 200
+    times. Fitting it once per fold and permuting only the tail gives exactly
+    the same null at ~1/200th the cost -- 30 Riemannian means instead of 6000.
+
+    The prefix is still fit on training trials only, per fold, so nothing about
+    the fold structure changes.
+    """
+    from pyriemann.estimation import Covariances
+    from pyriemann.tangentspace import TangentSpace
+    from sklearn.linear_model import LogisticRegression
+
+    folds = []
+    for tr, te in LeaveOneGroupOut().split(X, y, groups):
+        cov = Covariances(estimator="oas")
+        ts = TangentSpace(metric="riemann")
+        Ftr = ts.fit_transform(cov.fit_transform(X[tr]))
+        Fte = ts.transform(cov.transform(X[te]))
+        folds.append((Ftr, Fte, tr, te))
+
+    def one(s):
+        rng = np.random.default_rng(s)
+        yp = y.copy()
+        for g in np.unique(groups):
+            m = groups == g
+            yp[m] = rng.permutation(y[m])
+        accs = []
+        for Ftr, Fte, tr, te in folds:
+            lr = LogisticRegression(C=1.0, max_iter=2000).fit(Ftr, yp[tr])
+            accs.append(float((lr.predict(Fte) == yp[te]).mean()))
+        return float(np.mean(accs))
+
+    # The observed value must come from the same cached folds, or it is not
+    # comparable to the null.
+    observed = []
+    for Ftr, Fte, tr, te in folds:
+        lr = LogisticRegression(C=1.0, max_iter=2000).fit(Ftr, y[tr])
+        observed.append(float((lr.predict(Fte) == y[te]).mean()))
+
+    null = Parallel(n_jobs=n_jobs)(delayed(one)(seed + i) for i in range(n_perm))
+    return np.array(null), float(np.mean(observed))
