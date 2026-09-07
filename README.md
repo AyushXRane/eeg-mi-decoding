@@ -296,3 +296,73 @@ Non-motor channels drop toward chance, which is the expected result and an
 argument that blinks and drift are not carrying the classification. Note also
 that **9 motor channels beat all 64** — more input is worse here, which is the
 same over-parameterisation story F1 tells below.
+
+**C3 — the EMG control.** Muscle activity is broadband and sits closer to the
+scalp electrodes than cortex does, so it contaminates beta. If executed-run
+accuracy holds up in a band where there is no ERD to find, then part of
+execution's famous "stronger signal" is muscle rather than brain. Refit the
+entire pipeline at 30–70 Hz:
+
+| paradigm | 8–30 Hz (ERD band) | 30–70 Hz (no ERD) | drop |
+|---|---|---|---|
+| imagined | 0.556 ± 0.084 | 0.526 ± 0.053 | −3.0 pp → near chance |
+| executed | 0.625 ± 0.098 | **0.559 ± 0.077** | −6.6 pp → still decodable |
+
+Imagery collapses toward chance outside the ERD band, which is what it should do
+if what it is decoding is cortical. Execution does not: at 30–70 Hz it still
+scores 0.559, which is as high as imagery's *best* band. **Some of execution's
+advantage is not cortical.** This is the concrete reason imagery is the honest
+target here, and it is why I did not simply report the easier executed number.
+
+### D. Person or task? — the centrepiece
+
+Subject-ID probes, leave-one-run-out, 30 subjects, **chance = 1/30 = 0.033**,
+run on exactly the same preprocessed epochs the task classifier sees.
+
+| features | no alignment | **after Euclidean Alignment** |
+|---|---|---|
+| log-variance (covariance) | 0.960 ± 0.020 | **0.009 ± 0.010** |
+| **relative log-PSD (spectral shape)** | 0.935 ± 0.017 | **0.984 ± 0.012** |
+| absolute log-PSD | 0.996 ± 0.004 | 0.790 ± 0.133 |
+
+**The finding: Euclidean Alignment destroys the covariance fingerprint entirely
+and leaves the spectral fingerprint completely intact.** 0.960 → 0.009 in one
+row; 0.935 → 0.984 in the next. Task accuracy over the same data is 0.556.
+
+The mechanism is not mysterious, and the third row is the check on it. EA
+applies `X̃ = R^(-1/2) X`, a linear *spatial* transform that is constant over
+time. Every output channel is a fixed linear combination of the input channels'
+time series, so anything that lives in the *shape* of the spectrum, shared
+across channels, passes through unchanged. What EA does normalise is overall
+power — which is exactly why absolute log-PSD, which confounds shape with
+scale, drops from 0.996 to 0.790 while relative log-PSD does not move. The
+prediction and its control both hold.
+
+Two details that make this a claim about people rather than about recordings:
+the probe is **leave-one-run-out**, so the fingerprint has to generalise across
+recording sessions; and D2 lands at 0.009, *below* the 0.033 chance level, so
+after alignment subjects are not merely unidentifiable but systematically
+mis-identified across runs.
+
+**So: aligning covariances is not a control for subject identity.** A method a
+*Journal of Neural Engineering* systematic evaluation recommends as a standard
+preprocessing step for cross-subject models leaves a near-perfect subject
+signature in the data it hands to the classifier.
+
+**D5/D6 — what EA actually buys, and who it hurts.**
+
+| pipeline | mean EA effect | helped | hurt |
+|---|---|---|---|
+| csp_lda | **+10.7 pp ± 13.0** | 22 / 30 | 7 / 30 |
+| tangent_space | +5.9 pp ± 9.7 | 18 / 30 | 7 / 30 |
+
+EA helps considerably more than the 0–8 pp I expected. But the standard
+deviation is larger than the mean effect in both pipelines, and **7 subjects out
+of 30 are made worse in both**. Negative transfer is real and reporting only the
+mean would hide it.
+
+There is a tension worth stating plainly rather than smoothing over: EA is the
+single most useful thing in this pipeline (+10.7 pp, and without it the shipped
+model is at chance), *and* it leaves a perfect subject fingerprint behind. Both
+are true. It is a good method that is not doing the thing its name suggests it
+does.

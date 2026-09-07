@@ -1,3 +1,12 @@
 imagined (1350, 64, 481)  executed (1350, 64, 481)  30 subjects  (3s)
 
 == F. where does it overfit ==
+F1 csp_lda        train 0.548  test 0.534  gap 1.4 pp
+F1 tangent_space  train 0.998  test 0.556  gap 44.2 pp
+F2 n_train_subjects=  3  0.529 +/- 0.050
+F2 n_train_subjects=  6  0.551 +/- 0.081
+F2 n_train_subjects= 10  0.511 +/- 0.073
+F2 n_train_subjects= 15  0.547 +/- 0.068
+F2 n_train_subjects= 20  0.538 +/- 0.100
+F2 n_train_subjects= 25  0.580 +/- 0.080
+F2 n_train_subjects= 29  0.613 +/- 0.077
