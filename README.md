@@ -419,3 +419,195 @@ and only one of them is honest about what it is doing.
 **F3 — CSP capacity.** 2 / 4 / 6 / 8 components give 0.528 / 0.534 / 0.541 /
 0.541. Essentially flat. More spatial filters is more capacity, not more signal,
 which is consistent with C2 (9 motor channels beat all 64) and with F1.
+
+---
+
+## What a skeptical reader should conclude
+
+1. **The honest cross-subject imagery number is 0.556 ± 0.084 (tangent space,
+   LOSO), or 0.658 ± 0.165 for the shipped model with Euclidean Alignment
+   applied at test time.** It clears its own permutation null (p = 0.005) but by
+   only ~4 points over the null's 95th percentile.
+2. **It is a group statistic and nothing more.** Roughly half the individual
+   subjects have confidence intervals containing chance, and per-subject CIs are
+   ~28 points wide. Anyone quoting a single-subject accuracy on this dataset —
+   including me — is quoting noise.
+3. **Almost all of the transfer capability is the alignment, not the
+   classifier.** Remove test-time EA and the model sits at 0.512 ± 0.030.
+4. **The signal is where physiology says it should be.** Motor channels beat all
+   channels beat non-motor channels; imagery collapses outside the ERD band; the
+   group ERD lateralisation is significant and in the right direction.
+5. **My two headline predictions about leakage were both wrong, and the real
+   answer is sharper.** Subject pooling contributes ~2 points. Overlapping
+   windows split at random contribute ~44. "Use subject-wise splits" is
+   necessary and badly insufficient.
+6. **Subject identity is decodable at 0.984 after the standard alignment
+   correction, against 0.033 chance, on the same data that yields 0.556 on the
+   task.**
+
+## One design decision
+
+**Linear models over deep learning.** The alternative I genuinely considered was
+EEGNet — it is the obvious move, there is a maintained implementation in
+braindecode, and published results on this dataset run 84–89%.
+
+I rejected it on sample size, and F1 is the evidence that this was right rather
+than merely cautious: my *linear* tangent-space model already trains to 0.998 and
+tests at 0.556 on ~1300 trials. The overfitting problem is not waiting for me at
+the deep-learning stage; it is already here at 2080 linear parameters. A ConvNet
+would have made that gap larger and much harder to diagnose, and I would not have
+been able to tell you what it learned.
+
+The second reason is B5. The published 84–89% figures are obtained under
+evaluation protocols I can now reproduce with a 1-NN classifier that has learned
+nothing at all (0.979). Matching those numbers was never the goal; explaining
+them was.
+
+## Weakest point
+
+**What I trust least: D4 shows subject identity *survives* alignment. It does
+not show that surviving identity is what limits task accuracy.** Those are two
+different claims and I only measured the first. It is entirely possible that
+task accuracy is low for an unrelated reason — ~22 trials per class is brutal —
+and that the fingerprint is a passenger rather than a cause. The experiment that
+would close this gap is to remove the spectral fingerprint (per-channel spectral
+whitening, or an adversarial subject-invariant objective) and check whether LOSO
+task accuracy *rises*. I did not have time to run it, and without it D4 is a
+strong observation rather than a demonstrated mechanism.
+
+**What would have to be true for the conclusion to be wrong:** if the spectral
+subject-ID accuracy were driven by per-subject electrode impedance, amplifier
+gain, or cap placement rather than neurophysiology, then the finding is about
+hardware, not brains. It would still be a real confound for cross-subject
+models, but a much less interesting claim than the one I am making. I have not
+separated those two, and the fact that the fingerprint holds *across runs*
+(which are separate recordings but the same session and the same cap placement)
+does not settle it.
+
+**Also weak:** artifact rejection is bandpass plus CAR with no ICA. C2 is an
+indirect check on this, not a direct one. And 30 subjects is not 109 — though F2
+suggests the learning curve is still rising at 29, so more subjects would likely
+have helped a little.
+
+## Something you did not ask about
+
+Two things, one methodological and one about the data itself.
+
+**The windowing leak (B5)** is the one I would lead with. It is a concrete,
+reproducible demonstration that the standard advice about EEG evaluation is
+incomplete, and it produces a 0.979 that is entirely an artifact.
+
+**The annotation trap.** Runs 3/7/11 (left vs right fist) and runs 5/9/13 (both
+fists vs both feet) have indistinguishable annotation structure — same T0/T1/T2
+counts, same durations, same cadence. Nothing inside the EDF says which paradigm
+it is; only the run number in the filename does. A pipeline that globs for EDFs
+and trusts T1/T2 will silently train on a mixture of two different tasks and
+report a plausible-looking accuracy. This is also why `predict.py` warns when
+handed a run outside {3,4,7,8,11,12} rather than quietly returning labels.
+
+**A third, smaller one:** different published curations of this dataset exclude
+different subjects (S088/89/92/100 genuinely break; S038/S104/S106 are dropped by
+some papers but load fine here). That is an unstated free parameter that moves
+reported accuracies.
+
+## What I would do next
+
+- **Close the D4 gap.** Remove the surviving spectral fingerprint and test
+  whether LOSO task accuracy rises. That is the experiment that turns D4 from a
+  caveat into a method.
+- **Separate neurophysiology from hardware** in the fingerprint: does spectral
+  subject-ID survive per-channel spectral normalisation? Does it survive across
+  *sessions* recorded on different days, where cap placement differs? EEGMMIDB
+  cannot answer the second question; a multi-session dataset could.
+- **Fix the over-parameterisation** flagged by F1 — dimensionality reduction on
+  the tangent space, or restricting to the motor channels that C2 shows are
+  carrying the signal anyway.
+- **Extend to all 105 usable subjects.** F2 is still rising at 29 training
+  subjects, so this is likely worth a few points.
+- **Incremental EA** for a genuinely online system, rather than the transductive
+  batch version used here.
+
+## AI use
+
+Claude Code (Opus) wrote most of the module code from a specification I wrote
+first, ran the experiment sweeps, and drafted the results tables. I directed the
+experimental design, chose the evaluation protocols, and reviewed the output.
+
+The most useful thing to report is what it got wrong. Its first Euclidean
+Alignment implementation floored the reference covariance's eigenvalues at an
+absolute `1e-10`. Common average referencing makes that covariance singular by
+construction — the all-ones direction has exactly zero variance — so the floor
+amplified an empty subspace by a factor of ~10⁵, and the numerical noise living
+there turned out to be subject-identifying on its own. The result was D2 = 0.99:
+a confident, clean-looking number that pointed in the direction of my hypothesis
+and was entirely an artifact. It was caught by asserting that the aligned mean
+covariance actually equals the identity, which it did not. After the fix D2 is
+0.007. The lesson I would take from it is that a bug which confirms your
+hypothesis is the most expensive kind, and that every alignment step deserves an
+invariant you can assert rather than eyeball.
+
+*(See `NOTES_FOR_VIDEO.md` — the "explain one choice in your own words"
+requirement is answered there and should be delivered in your own voice.)*
+
+---
+
+## Repository layout
+
+```
+README.md            findings, decisions, how to run
+SPEC.md              the plan this was built against
+EXPERIMENTS.md       attempt log, one row per run, including the dead ends
+NOTES_FOR_VIDEO.md   talking points for the demo video
+requirements.txt     pinned
+src/
+  data.py            loading, QC, subject exclusions, run-aware epoching + cache
+  preprocess.py      bandpass, CAR
+  align.py           Euclidean Alignment
+  models.py          the two pipelines, plus the capacity ladder for B4
+  evaluate.py        CV schemes, binomial CIs, permutation nulls
+  probes.py          subject-ID probes, ERD check, channel sets
+  tscache.py         per-fold tangent-space feature cache
+  report.py          CSV writing
+scripts/
+  fetch.sh           parallel prefetch into MNE's cache
+  verify_labels.py   A1 -- run this first
+  gonogo.py          the four numbers that set the framing
+  grid.py            experiment blocks A-F
+  leakage.py         B5 -- the window-overlap leak
+  eval_predict.py    G1 -- the shipped model in its own configuration
+  figures.py         results/*.png
+  train.py           fit and save the shipped model
+  predict.py         EDF path -> predicted labels
+results/             CSVs and figures
+```
+
+## References
+
+**Dataset.** Schalk et al., *IEEE Trans. Biomed. Eng.* 51(6):1034–1043, 2004
+(BCI2000). Goldberger et al., *Circulation* 101(23):e215–e220, 2000 (PhysioNet).
+
+**Benchmarks.** A large standardised MOABB benchmark reports CSP and covariance
+tangent-space at 0.604 ± 0.178 and 0.605 ± 0.174 on PhysionetMI *within-session*,
+with 93 distinct winning pipelines across 109 subjects — the between-subject
+spread, not the centre, is the story.
+
+**Leakage.** Brookshire et al., medRxiv 2024.01.16.24301366 — segment-based vs
+subject-based holdout in translational DNN-EEG studies.
+
+**Alignment.** He & Wu, *IEEE TBME* 67(2):399–410, 2020 (Euclidean Alignment,
+original). Junqueira et al., *J. Neural Eng.* 21(3):036038, 2024 (systematic
+evaluation; recommends EA as standard cross-subject preprocessing). Zanini et
+al., *IEEE TBME* 65(5):1107–1116, 2018 (Riemannian alignment).
+
+**Subject fingerprinting.** Fraschini et al., 2020 — EEG fingerprinting from the
+aperiodic component of the power spectrum, on this dataset. Related work reports
+near-perfect subject recognition from high-frequency synchronisation modes across
+all 109 subjects.
+
+**BCI inefficiency.** Zhang et al., *Brain Science Advances*, 2020 — depending on
+the survey, 10–50% of users cannot reach reliable control, which is consistent
+with the per-subject spread reported throughout this README.
+
+**Cross-task transfer.** Work on bridging motor execution and motor imagery BCI
+paradigms reports ME-trained models classifying MI comparably to MI-trained
+models, consistent with E1 above.

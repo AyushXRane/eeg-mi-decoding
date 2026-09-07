@@ -10,3 +10,4 @@ F2 n_train_subjects= 15  0.547 +/- 0.068
 F2 n_train_subjects= 20  0.538 +/- 0.100
 F2 n_train_subjects= 25  0.580 +/- 0.080
 F2 n_train_subjects= 29  0.613 +/- 0.077
+F3 CSP components=2  0.528 +/- 0.071
