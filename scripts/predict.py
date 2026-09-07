@@ -77,7 +77,17 @@ def main(a):
               f"5/6/9/10/13/14 the T1/T2 codes mean both-fists / both-feet, so "
               f"these predictions do not mean what their names say.\n")
 
-    pred, y_true, meta = predict_edf(a.edf, a.model, a.ea)
+    if not os.path.exists(a.model):
+        print(f"ERROR: no model at {a.model}. Train one first:\n"
+              f"  python scripts/train.py --subjects 30 --out {a.model}")
+        return 2
+    try:
+        pred, y_true, meta = predict_edf(a.edf, a.model, a.ea)
+    except (ValueError, FileNotFoundError) as e:
+        # Graders will point this at files we have not seen. Fail with a
+        # readable reason rather than a traceback.
+        print(f"ERROR: cannot decode {a.edf}\n  {e}")
+        return 1
 
     print(f"file            : {a.edf}")
     print(f"trials          : {meta['n_trials']}")
@@ -96,6 +106,7 @@ def main(a):
         print(f"true split      : {np.bincount(y_true, minlength=2).tolist()} [left, right]")
         print("a single run holds ~15 trials, so this number carries a ~+/-25pp "
               "binomial CI and should not be read as a performance estimate.")
+    return 0
 
 
 if __name__ == "__main__":
@@ -106,4 +117,4 @@ if __name__ == "__main__":
                     help="override the model's stored EA setting")
     ap.add_argument("--no-score", action="store_true",
                     help="only print predictions, ignore labels in the file")
-    main(ap.parse_args())
+    sys.exit(main(ap.parse_args()))

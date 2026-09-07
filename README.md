@@ -209,6 +209,8 @@ Those trials are *unlabelled*, which is a far lighter burden than a labelled
 calibration session, but it is not zero. A truly online system would need to
 estimate the whitener incrementally, and I have not tested that.
 
+![per-subject LOSO](results/fig_per_subject_loso.png)
+
 ### B. Is the number an artifact of how I split the data?
 
 The headline honest number, leave-one-subject-out on imagery:
@@ -264,6 +266,8 @@ The practical consequence is that the much-repeated advice "use subject-wise
 splits" is necessary but nowhere near sufficient. Grouping by subject *and*
 splitting windows at random still gives you 0.979. You have to group by trial.
 
+![window leakage](results/fig_window_leakage.png)
+
 ### C. Baselines beyond chance
 
 **C1 — permutation null.** Labels shuffled *within* each subject, then the
@@ -314,6 +318,8 @@ scores 0.559, which is as high as imagery's *best* band. **Some of execution's
 advantage is not cortical.** This is the concrete reason imagery is the honest
 target here, and it is why I did not simply report the easier executed number.
 
+![permutation null](results/fig_permutation.png)
+
 ### D. Person or task? — the centrepiece
 
 Subject-ID probes, leave-one-run-out, 30 subjects, **chance = 1/30 = 0.033**,
@@ -349,6 +355,8 @@ mis-identified across runs.
 preprocessing step for cross-subject models leaves a near-perfect subject
 signature in the data it hands to the classifier.
 
+![subject id](results/fig_subject_id.png)
+
 **D5/D6 — what EA actually buys, and who it hurts.**
 
 | pipeline | mean EA effect | helped | hurt |
@@ -366,6 +374,8 @@ single most useful thing in this pipeline (+10.7 pp, and without it the shipped
 model is at chance), *and* it leaves a perfect subject fingerprint behind. Both
 are true. It is a good method that is not doing the thing its name suggests it
 does.
+
+![EA per subject](results/fig_ea_per_subject.png)
 
 ### E. Transfer between execution and imagery
 
@@ -428,6 +438,8 @@ reading is that the curve **has not plateaued at 29 subjects**, so extending to
 all 105 usable subjects would probably buy a few points — but the middle of the
 curve is dominated by resampling noise and I would not defend any individual
 point on it.
+
+![learning curve](results/fig_learning_curve.png)
 
 **F3 — CSP capacity.** 2 / 4 / 6 / 8 components give 0.528 / 0.534 / 0.541 /
 0.541. Essentially flat. More spatial filters is more capacity, not more signal,
