@@ -17,11 +17,17 @@ from scipy import stats
 from src.data import load_dataset, good_subjects, IMAGINED_RUNS, EXECUTED_RUNS
 from src.align import align_by_group
 from src.models import csp_lda, tangent_space, CAPACITY_LADDER
+from sklearn.linear_model import LogisticRegression
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVC
 from src.evaluate import (loso, loso_cross, random_kfold, within_subject,
                           permutation_null_fast, summarise, binomial_ci)
 from src.probes import (subject_id_probe, logvar_features, psd_features,
                         erd_check, pick_channels, MOTOR, NON_MOTOR)
 from src.report import write_rows, line
+from src.tscache import loso_ts_folds, loso_with_features
 
 R = "results"
 
@@ -82,11 +88,18 @@ def block_B(ds, ds_exec, args):
     # B4: the gap as a function of model capacity. B3 came back at zero for
     # linear models; this tests whether that is because the split is safe or
     # because a linear model cannot exploit it.
+    #
+    # All three share one feature space, so the tangent-space prefix is fit once
+    # per fold and reused rather than recomputed three times.
     print("  B4 leakage gap vs model capacity:")
+    folds = loso_ts_folds(ds.X, ds.groups)
+    tails = {"linear_lr": lambda: LogisticRegression(C=1.0, max_iter=2000),
+             "rbf_svm": lambda: make_pipeline(StandardScaler(), SVC(C=10.0)),
+             "knn_1": lambda: make_pipeline(StandardScaler(),
+                                            KNeighborsClassifier(n_neighbors=1))}
     for name, fn in CAPACITY_LADDER.items():
-        p = fn()
-        f = random_kfold(ds.X, ds.y, p)
-        r = loso(ds.X, ds.y, ds.groups, p)
+        f = random_kfold(ds.X, ds.y, fn())
+        r = loso_with_features(folds, ds.y, ds.groups, tails[name])
         s = summarise(r, name)
         gap = float(np.mean(f)) - s["mean"]
         print(f"     {name:10s} kfold {np.mean(f):.3f}  LOSO {s['mean']:.3f}  "
@@ -164,9 +177,15 @@ def block_D(ds, ds_exec, args):
 
     # D5/D6: what EA actually buys on the task, per subject and on average.
     out = []
+    f_base, f_al = loso_ts_folds(ds.X, ds.groups), loso_ts_folds(Xa, ds.groups)
+    lr = lambda: LogisticRegression(C=1.0, max_iter=2000)
     for name, p in pipes().items():
-        base = {r["subject"]: r["acc"] for r in loso(ds.X, ds.y, ds.groups, p)}
-        aligned = {r["subject"]: r["acc"] for r in loso(Xa, ds.y, ds.groups, p)}
+        if name == "tangent_space":
+            base = {r["subject"]: r["acc"] for r in loso_with_features(f_base, ds.y, ds.groups, lr)}
+            aligned = {r["subject"]: r["acc"] for r in loso_with_features(f_al, ds.y, ds.groups, lr)}
+        else:
+            base = {r["subject"]: r["acc"] for r in loso(ds.X, ds.y, ds.groups, p)}
+            aligned = {r["subject"]: r["acc"] for r in loso(Xa, ds.y, ds.groups, p)}
         d = np.array([aligned[s] - base[s] for s in base])
         print(f"D5 {name:14s} EA delta {d.mean()*100:+.1f} pp +/- {d.std()*100:.1f}  "
               f"helped {(d>0).sum()}/{len(d)}, hurt {(d<0).sum()}/{len(d)}")
@@ -207,7 +226,11 @@ def block_F(ds, ds_exec, args):
 
     # F1: train vs test accuracy on the same folds.
     for name, p in pipes().items():
-        r = loso(ds.X, ds.y, ds.groups, p, return_train=True)
+        if name == "tangent_space":
+            r = loso_with_features(loso_ts_folds(ds.X, ds.groups), ds.y, ds.groups,
+                                   lambda: LogisticRegression(C=1.0, max_iter=2000))
+        else:
+            r = loso(ds.X, ds.y, ds.groups, p, return_train=True)
         tr = np.mean([x["train_acc"] for x in r])
         te = np.mean([x["acc"] for x in r])
         print(f"F1 {name:14s} train {tr:.3f}  test {te:.3f}  gap {(tr-te)*100:.1f} pp")
@@ -217,12 +240,12 @@ def block_F(ds, ds_exec, args):
     # F2: does adding people help, and where does it stop helping?
     rng = np.random.default_rng(0)
     subs = np.unique(ds.groups)
-    for n in [3, 5, 8, 12, 16, 20, 25, len(subs) - 1]:
+    for n in [3, 6, 10, 15, 20, 25, len(subs) - 1]:
         if n >= len(subs):
             continue
         accs = []
-        for rep in range(3):
-            for held in rng.choice(subs, size=min(6, len(subs)), replace=False):
+        for rep in range(2):
+            for held in rng.choice(subs, size=min(5, len(subs)), replace=False):
                 pool = [s for s in subs if s != held]
                 tr_s = rng.choice(pool, size=n, replace=False)
                 m_tr = np.isin(ds.groups, tr_s)
