@@ -19,23 +19,29 @@ import numpy as np
 from scipy.linalg import eigh
 
 
-def ea_whitener(X, eps=1e-10):
-    """R^(-1/2) for one subject's trials, X of shape (n, ch, t)."""
+def ea_whitener(X, rtol=1e-6):
+    """R^(-1/2) for one subject's trials, X of shape (n, ch, t).
+
+    Common average referencing makes R singular -- the all-ones direction has
+    zero variance by construction. A plain inverse square root multiplies that
+    direction by 1/sqrt(eps), so numerical noise in an empty subspace comes back
+    amplified ~1e5x and carries a subject signature of its own. Using the
+    pseudo-inverse square root instead (drop eigenvalues below rtol * max)
+    projects the null space out rather than exploding it.
+    """
     covs = np.einsum("nct,ndt->ncd", X, X) / X.shape[-1]
     R = covs.mean(axis=0)
-    # eigendecompose rather than fractional_matrix_power: CAR makes R rank
-    # deficient by one, so an unfloored inverse square root blows up.
     w, V = eigh(R)
-    w = np.maximum(w, eps)
-    return (V * (w ** -0.5)) @ V.T
+    inv = np.where(w > rtol * w.max(), w, np.inf) ** -0.5
+    return (V * inv) @ V.T
 
 
-def align_subject(X, eps=1e-10):
+def align_subject(X, rtol=1e-6):
     """Apply EA to one subject's trials."""
-    return np.einsum("cd,ndt->nct", ea_whitener(X, eps), X)
+    return np.einsum("cd,ndt->nct", ea_whitener(X, rtol), X)
 
 
-def align_by_group(X, groups, eps=1e-10):
+def align_by_group(X, groups, rtol=1e-6):
     """Apply EA independently within each subject.
 
     Done outside the CV loop on purpose and it is still not leakage: each
@@ -45,5 +51,5 @@ def align_by_group(X, groups, eps=1e-10):
     out = np.empty_like(X)
     for g in np.unique(groups):
         m = groups == g
-        out[m] = align_subject(X[m], eps)
+        out[m] = align_subject(X[m], rtol)
     return out

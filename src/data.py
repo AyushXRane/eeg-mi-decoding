@@ -55,7 +55,7 @@ def load_subject(subject, runs, verify=False):
     Returns None if the recording fails QC (wrong sampling rate or channel
     count) so callers can skip it instead of crashing mid-sweep.
     """
-    paths = eegbci.load_data(subject, runs, verbose=False)
+    paths = eegbci.load_data(subject, runs, update_path=True, verbose=False)
     raws = [mne.io.read_raw_edf(p, preload=True, verbose=False) for p in paths]
 
     for r in raws:
