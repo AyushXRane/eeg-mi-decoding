@@ -1,12 +1,18 @@
 """Loading eegmmidb from PhysioNet and getting it into (trials, channels, time)."""
 
+import hashlib
+import os
+from typing import NamedTuple
+
 import numpy as np
 import mne
 from mne.datasets import eegbci
 
 mne.set_log_level("ERROR")
 
-# Runs where T1/T2 mean left fist / right fist.
+# Runs where T1/T2 mean left fist / right fist. Verified, not assumed -- see
+# scripts/verify_labels.py. In runs 5/6/9/10/13/14 the same codes mean
+# both-fists / both-feet, which is why only these six appear here.
 IMAGINED_RUNS = [4, 8, 12]
 EXECUTED_RUNS = [3, 7, 11]
 
@@ -19,6 +25,22 @@ BAD_SUBJECTS = [88, 89, 92, 100]
 
 EXPECTED_SFREQ = 160.0
 EXPECTED_N_CHAN = 64
+
+CACHE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                         "mne_data", "epochs_cache")
+
+
+class Dataset(NamedTuple):
+    """Epoched trials plus every grouping variable an honest split might need.
+
+    `run` matters: a subject-ID probe that only works within a run is a session
+    artifact, not a fingerprint. Keeping it lets us test across runs.
+    """
+    X: np.ndarray        # (n_trials, n_channels, n_times)
+    y: np.ndarray        # 0 = left fist, 1 = right fist
+    groups: np.ndarray   # subject id per trial
+    run: np.ndarray      # run number per trial
+    ch_names: list
 
 
 def good_subjects(n):
@@ -40,9 +62,9 @@ def load_subject(subject, runs, verify=False):
         if r.info["sfreq"] != EXPECTED_SFREQ or len(r.ch_names) != EXPECTED_N_CHAN:
             return None
 
-    raw = mne.concatenate_raws(raws)
+    raw = mne.concatenate_raws(raws) if len(raws) > 1 else raws[0]
 
-    # EDF channel names come in as 'Fc5.', 'C3..' — trailing dots and odd case.
+    # EDF channel names come in as 'Fc5.', 'C3..' -- trailing dots and odd case.
     # standardize() strips them so the montage will match.
     eegbci.standardize(raw)
     raw.set_montage(mne.channels.make_standard_montage("standard_1005"),
@@ -87,35 +109,62 @@ def epochs_from_raw(raw, tmin=0.5, tmax=3.5):
     return X, y, ep.ch_names
 
 
-def load_dataset(subjects, runs, tmin=0.5, tmax=3.5, preprocess_fn=None):
-    """Stack many subjects into X, y, groups.
+def _cache_key(subjects, runs, tmin, tmax, l_freq, h_freq, car):
+    s = f"{sorted(subjects)}|{sorted(runs)}|{tmin}|{tmax}|{l_freq}|{h_freq}|{car}"
+    return hashlib.md5(s.encode()).hexdigest()[:16]
 
-    groups is the subject id per trial. Every split in this project uses it —
-    trials from one person must never straddle train and test.
+
+def load_dataset(subjects, runs, tmin=0.5, tmax=3.5, l_freq=8.0, h_freq=30.0,
+                 car=True, cache=True, verbose=True):
+    """Stack many subjects into a Dataset.
+
+    Loads run by run rather than concatenating first, so each trial keeps the
+    run it came from. Filtering and CAR happen on continuous data before
+    epoching -- filter edge effects at epoch boundaries would otherwise eat into
+    the window we care about.
     """
-    Xs, ys, gs = [], [], []
+    from src.preprocess import preprocess_raw
+
+    key = _cache_key(subjects, runs, tmin, tmax, l_freq, h_freq, car)
+    path = os.path.join(CACHE_DIR, f"{key}.npz")
+    if cache and os.path.exists(path):
+        z = np.load(path, allow_pickle=True)
+        return Dataset(z["X"], z["y"], z["groups"], z["run"], list(z["ch_names"]))
+
+    Xs, ys, gs, rs = [], [], [], []
     names = None
+    skipped = []
 
     for s in subjects:
-        raw = load_subject(s, runs)
-        if raw is None:
-            print(f"  skip S{s:03d} (failed QC)")
-            continue
+        for r in runs:
+            raw = load_subject(s, [r])
+            if raw is None:
+                skipped.append((s, r, "QC"))
+                continue
 
-        if preprocess_fn is not None:
-            raw = preprocess_fn(raw)
+            raw = preprocess_raw(raw, l_freq=l_freq, h_freq=h_freq, car=car)
+            got = epochs_from_raw(raw, tmin, tmax)
+            if got is None:
+                skipped.append((s, r, "no T1/T2"))
+                continue
 
-        got = epochs_from_raw(raw, tmin, tmax)
-        if got is None:
-            print(f"  skip S{s:03d} (missing T1/T2)")
-            continue
-
-        X, y, names = got
-        Xs.append(X)
-        ys.append(y)
-        gs.append(np.full(len(y), s))
+            X, y, names = got
+            Xs.append(X)
+            ys.append(y)
+            gs.append(np.full(len(y), s))
+            rs.append(np.full(len(y), r))
 
     if not Xs:
         raise RuntimeError("no subjects loaded")
 
-    return np.concatenate(Xs), np.concatenate(ys), np.concatenate(gs), names
+    if verbose and skipped:
+        print(f"  skipped {len(skipped)}: {skipped[:10]}")
+
+    ds = Dataset(np.concatenate(Xs), np.concatenate(ys),
+                 np.concatenate(gs), np.concatenate(rs), names)
+
+    if cache:
+        os.makedirs(CACHE_DIR, exist_ok=True)
+        np.savez_compressed(path, X=ds.X, y=ds.y, groups=ds.groups,
+                            run=ds.run, ch_names=np.array(ds.ch_names))
+    return ds
