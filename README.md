@@ -130,3 +130,43 @@ necessarily appears in both train and test, because subject identity *is* the
 label, but train and test trials come from different recording runs. Without
 that, a high identity score would just mean two halves of one continuous
 recording look alike.
+
+---
+
+## Results
+
+30 subjects, imagined runs 4/8/12 unless stated. Every figure is
+mean ± sd across held-out subjects, never a bare mean.
+
+### A. Does the physiological effect exist at all?
+
+**A2 — contralateral ERD.** Mu-band (8–13 Hz) power at C3 and C4, right-hand
+trials minus left-hand trials. The lateralisation index is defined so that
+positive = the expected contralateral pattern.
+
+| paradigm | lateralisation index | t (vs 0) | p | subjects with expected sign |
+|---|---|---|---|---|
+| imagined | **+0.203 ± 0.266** | +4.12 | 0.0003 | 24 / 30 |
+| executed | **+0.149 ± 0.299** | +2.68 | 0.012 | 19 / 30 |
+
+The effect is real at the group level and in the right direction, which
+independently confirms the T1/T2 mapping — a mislabelled dataset would not
+produce a *lateralised* difference. Two things to notice. First, six subjects
+show the **reverse** pattern for imagery; the effect is a group property, not a
+per-person guarantee. Second, the effect is *stronger for imagery than for
+execution*, which is backwards from the usual "execution has a stronger signal"
+claim. C3 below explains why.
+
+**A3/A4 — the optimistic ceiling, and why single-subject numbers are nearly
+meaningless.** Stratified 5-fold *inside* each subject:
+
+| pipeline | within-subject accuracy | range | mean 95% CI width |
+|---|---|---|---|
+| csp_lda | 0.547 ± 0.183 | 0.27 – 1.00 | 27.9 pp |
+| tangent_space | 0.567 ± 0.181 | 0.27 – 0.98 | 28.0 pp |
+
+With ~45 trials per subject, a single subject's accuracy carries a 95% binomial
+confidence interval roughly 28 points wide. One subject scores 1.00 and another
+0.27; both are consistent with the same underlying ability. **Any per-subject
+number in this dataset, mine or anyone else's, is nearly uninformative on its
+own.** This is why every table here reports a distribution.
