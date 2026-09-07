@@ -45,3 +45,32 @@ systematically *mis*-identifiable across runs.
 - Parallel prefetch with `seq -w 1 32`, which pads to `S23` rather than `S023`.
   Every URL 404'd and curl without `-f` cheerfully saved the error pages as
   `.edf` files. 195 files "downloaded", all junk.
+
+---
+
+## Full grid, 30 subjects (2026-09-07)
+
+| # | Experiment | Result | Conclusion |
+|---|-----------|--------|------------|
+| 12 | A2 ERD lateralisation, imagined | +0.203 ± 0.266, t=+4.12, p=0.0003, 24/30 subjects | Real at group level, and it confirms the T1/T2 mapping physiologically. 6/30 show the reverse. |
+| 13 | A2 ERD lateralisation, executed | +0.149 ± 0.299, t=+2.68, p=0.012, 19/30 | Weaker than imagery, which is backwards from the usual claim. |
+| 14 | A3 within-subject, csp_lda | 0.547 ± 0.183 [0.27–1.00] | The optimistic ceiling. |
+| 15 | A3 within-subject, tangent_space | 0.567 ± 0.181 [0.27–0.98] | Barely above LOSO — per-subject calibration data buys almost nothing at 45 trials. |
+| 16 | A4 mean per-subject 95% CI width | 27.9–28.0 pp | Any single-subject number here is uninformative. |
+| 17 | B1/B2/B3 csp_lda | kfold 0.541, LOSO 0.534, gap **+0.7 pp** | Prediction (15–30 pp) falsified. |
+| 18 | B1/B2/B3 tangent_space | kfold 0.619, LOSO **0.556 ± 0.084**, gap **+6.3 pp** | The honest headline number. |
+| 19 | B4 capacity ladder | linear +6.3 pp, rbf_svm +1.4 pp, knn_1 +1.0 pp | **My follow-up hypothesis also falsified.** More capacity did not widen the gap. 1-NN in a 2080-dim tangent space is at chance (0.505) both ways — it cannot memorise usefully, so it cannot leak. |
+| 20 | B5 window-overlap leakage | see results/B5_window_leakage.csv | The mechanism B3/B4 ruled out: splitting overlapping windows at random. |
+| 21 | D1 subject-ID logvar, no EA | **0.960 ± 0.020** (chance 0.033) | |
+| 22 | D2 subject-ID logvar, EA | **0.009 ± 0.010** | EA erases the covariance fingerprint entirely. |
+| 23 | D3 subject-ID rel. log-PSD, no EA | **0.935 ± 0.017** | |
+| 24 | D4 subject-ID rel. log-PSD, EA | **0.984 ± 0.012** | **The finding. Survives untouched — in fact slightly higher.** |
+| 25 | D3b/D4b absolute log-PSD | 0.996 → 0.790 under EA | Mechanistic confirmation: EA normalises *power*, so absolute PSD drops. It does not touch spectral *shape*, so relative PSD does not. |
+| 26 | D5 EA effect on task, csp_lda | **+10.7 pp ± 13.0**, helped 22/30, hurt 7/30 | Far above the 0–8 pp predicted. |
+| 27 | D5 EA effect on task, tangent_space | +5.9 pp ± 9.7, helped 18/30, hurt 7/30 | |
+| 28 | D6 per-subject EA delta | 7/30 hurt in both pipelines | Negative transfer is real, as predicted. |
+| 29 | E1 executed → imagined | 0.577 ± 0.107 [0.38–0.84] | **Higher than imagery→imagery LOSO (0.556).** Training on the easier paradigm transfers better than training on the target one. |
+| 30 | F1 fit gap, csp_lda | train 0.548 / test 0.534, **1.4 pp** | 4 CSP components cannot overfit. |
+| 31 | F1 fit gap, tangent_space | train **0.998** / test 0.556, **44.2 pp** | Fits the training set perfectly and generalises at near chance. 2080 tangent-space features from ~1300 trials. This is the clearest overfitting evidence in the project. |
+| 32 | F2 learning curve | 0.529 / 0.551 / 0.511 / 0.547 / 0.538 for n=3/6/10/15/20 | **Flat.** Adding training subjects does not help. Prediction ("rise then plateau") falsified. |
+| 33 | G1 shipped-model config | per-run EA 0.658 ± 0.165, per-subject EA 0.641, no EA 0.512 | The CLI's real number, and proof the capability is the alignment rather than the classifier. |
