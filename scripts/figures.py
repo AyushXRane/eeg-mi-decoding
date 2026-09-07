@@ -115,6 +115,39 @@ def fig_capacity():
     print("  -> fig_capacity_leakage.png")
 
 
+def fig_window_leakage():
+    """B5: the leak that actually explains the published numbers."""
+    rows = read("B5_window_leakage.csv")
+    if not rows:
+        return
+    models = []
+    for r in rows:
+        if r["model"] not in models:
+            models.append(r["model"])
+    splits = ["random_over_windows", "grouped_by_trial", "grouped_by_subject"]
+    labels = ["random split\nover windows", "grouped\nby trial", "leave one\nsubject out"]
+    colors = ["#c0392b", "#e08a4a", "#2c7fb8"]
+
+    fig, axes = plt.subplots(1, len(models), figsize=(9, 4.2), sharey=True)
+    for ax, m in zip(np.atleast_1d(axes), models):
+        vals = [float(next(r["acc"] for r in rows
+                           if r["model"] == m and r["split"] == sp)) for sp in splits]
+        ax.bar(np.arange(3), vals, color=colors)
+        for i, v in enumerate(vals):
+            ax.text(i, v + 0.02, f"{v:.3f}", ha="center", fontsize=9)
+        ax.axhline(0.5, ls="--", c="k", lw=0.9)
+        ax.set_xticks(np.arange(3))
+        ax.set_xticklabels(labels, fontsize=8)
+        ax.set_title(m, fontsize=10)
+        ax.set_ylim(0, 1.08)
+    np.atleast_1d(axes)[0].set_ylabel("accuracy")
+    fig.suptitle("87.5% overlapping windows: splitting them at random leaks the answer\n"
+                 "dashed line = chance", fontsize=10)
+    fig.tight_layout()
+    fig.savefig(f"{R}/fig_window_leakage.png", dpi=150)
+    print("  -> fig_window_leakage.png")
+
+
 def fig_permutation():
     rows = read("C1_permutation.csv")
     if not rows:
@@ -139,10 +172,11 @@ def fig_learning_curve():
     rows = read("F_overfitting.csv")
     if not rows:
         return
-    rows = sorted([r for r in rows if r["id"] == "F2"],
-                  key=lambda r: int(r["n_train_subjects"]))
+    rows = [r for r in rows if r.get("id") == "F2" and r.get("n_train_subjects")]
     if not rows:
+        print("  (skip learning curve, no F2 rows)")
         return
+    rows = sorted(rows, key=lambda r: int(r["n_train_subjects"]))
     n = [int(r["n_train_subjects"]) for r in rows]
     a = np.array([float(r["acc"]) for r in rows])
     s = np.array([float(r["sd"]) for r in rows])
@@ -209,6 +243,7 @@ if __name__ == "__main__":
     fig_per_subject()
     fig_subject_id()
     fig_capacity()
+    fig_window_leakage()
     fig_permutation()
     fig_learning_curve()
     fig_ea_delta()
