@@ -7,6 +7,7 @@ measured.
 """
 
 import numpy as np
+from joblib import Parallel, delayed
 from scipy.stats import beta
 from sklearn.base import clone
 from sklearn.model_selection import StratifiedKFold, LeaveOneGroupOut
@@ -74,23 +75,51 @@ def random_kfold(X, y, pipe, n_splits=5, seed=0):
     return out
 
 
-def permutation_null(X, y, groups, pipe, n_perm=200, seed=0):
+def within_subject(X, y, groups, pipe, n_splits=5, seed=0):
+    """A3: stratified k-fold inside each subject separately.
+
+    The optimistic ceiling -- the model gets labelled data from the very person
+    it is tested on, which is the calibration burden a real BCI is trying to
+    avoid. Every subject's estimate rests on ~9 test trials per fold, hence the
+    CI on the pooled count.
+    """
+    rows = []
+    for s in np.unique(groups):
+        m = groups == s
+        Xs, ys = X[m], y[m]
+        if np.bincount(ys).min() < n_splits:
+            continue
+        cv = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=seed)
+        k = n = 0
+        for tr, te in cv.split(Xs, ys):
+            pred = clone(pipe).fit(Xs[tr], ys[tr]).predict(Xs[te])
+            k += int((pred == ys[te]).sum())
+            n += len(te)
+        lo, hi = binomial_ci(k, n)
+        rows.append({"subject": int(s), "acc": k / n, "n": n, "ci_lo": lo, "ci_hi": hi})
+    return rows
+
+
+def _one_perm(X, y, groups, pipe, seed):
+    rng = np.random.default_rng(seed)
+    yp = y.copy()
+    for g in np.unique(groups):
+        m = groups == g
+        yp[m] = rng.permutation(y[m])
+    return float(np.mean([r["acc"] for r in loso(X, yp, groups, pipe)]))
+
+
+def permutation_null(X, y, groups, pipe, n_perm=200, seed=0, n_jobs=-1):
     """Shuffle labels within each subject, then rerun the whole LOSO.
 
     Within-subject shuffling matters: a global shuffle would also destroy the
     subject-wise class balance, making the null easier than the real problem and
-    the test too permissive.
+    the test too permissive. The null must also be built by rerunning the *same*
+    CV -- a null from a different split structure tests a different question.
     """
-    rng = np.random.default_rng(seed)
-    null = []
-    for _ in range(n_perm):
-        yp = y.copy()
-        for g in np.unique(groups):
-            m = groups == g
-            yp[m] = rng.permutation(y[m])
-        accs = [r["acc"] for r in loso(X, yp, groups, pipe)]
-        null.append(float(np.mean(accs)))
-    return np.array(null)
+    out = Parallel(n_jobs=n_jobs, verbose=0)(
+        delayed(_one_perm)(X, y, groups, pipe, seed + i) for i in range(n_perm))
+    return np.array(out)
 
 
 def summarise(rows, label=""):

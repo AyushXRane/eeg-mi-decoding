@@ -13,6 +13,7 @@ from pyriemann.tangentspace import TangentSpace
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 
 
 def csp_lda(n_components=4):
@@ -42,3 +43,46 @@ def tangent_space(C=1.0):
 
 
 PIPELINES = {"csp_lda": csp_lda, "tangent_space": tangent_space}
+
+
+# --- Capacity ladder, for the leakage experiment (B4) only ---------------------
+# B3 predicted a large gap between random trial-level k-fold and LOSO, and got
+# roughly zero. The reason is that subject leakage can only inflate a score if
+# the model can exploit it, and a global linear model cannot: subject identity
+# carries no information about the left/right label, since every subject
+# contributes both classes in balance.
+#
+# These three share one feature space (tangent-space projected covariances) and
+# differ only in how much they can memorise. They exist to measure the
+# leakage gap as a function of capacity. They are NOT performance models and
+# none of them is the headline result.
+
+def ts_knn(k=1):
+    """Pure memorisation. 1-NN can only answer by finding a near-identical
+    trial, which under a random split will often be another trial from the same
+    person and the same run."""
+    from sklearn.neighbors import KNeighborsClassifier
+    return Pipeline([
+        ("cov", Covariances(estimator="oas")),
+        ("ts", TangentSpace(metric="riemann")),
+        ("sc", StandardScaler()),
+        ("knn", KNeighborsClassifier(n_neighbors=k)),
+    ])
+
+
+def ts_svm_rbf(C=10.0, gamma="scale"):
+    """Intermediate capacity: non-linear but not a lookup table."""
+    from sklearn.svm import SVC
+    return Pipeline([
+        ("cov", Covariances(estimator="oas")),
+        ("ts", TangentSpace(metric="riemann")),
+        ("sc", StandardScaler()),
+        ("svm", SVC(C=C, gamma=gamma)),
+    ])
+
+
+CAPACITY_LADDER = {
+    "linear_lr": tangent_space,     # cannot use subject identity
+    "rbf_svm": ts_svm_rbf,          # can partially
+    "knn_1": ts_knn,                # memorises outright
+}

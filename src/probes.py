@@ -96,8 +96,10 @@ def erd_check(X, y, ch_names, sfreq=SFREQ):
     mu = (f >= 8) & (f <= 13)
     power = np.log(P[..., mu].mean(axis=-1) + 1e-30)   # (n_trials, 2)
     left, right = power[y == 0], power[y == 1]
-    # Positive lateralisation index = the expected contralateral pattern.
+    d_c3 = right[:, 0].mean() - left[:, 0].mean()   # right-hand trials minus left, at C3
+    d_c4 = right[:, 1].mean() - left[:, 1].mean()
+    # Right-hand imagery desynchronises the LEFT hemisphere (C3), so d_c3 should
+    # be the more negative of the two. Defined so positive = expected pattern.
     return {"C3_left": float(left[:, 0].mean()), "C3_right": float(right[:, 0].mean()),
             "C4_left": float(left[:, 1].mean()), "C4_right": float(right[:, 1].mean()),
-            "lat_index": float((right[:, 0].mean() - left[:, 0].mean())
-                               - (right[:, 1].mean() - left[:, 1].mean()))}
+            "lat_index": float(d_c4 - d_c3)}
