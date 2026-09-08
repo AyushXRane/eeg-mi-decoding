@@ -32,7 +32,7 @@ def main(a):
                 rows.append({"paradigm": para, "features": fname, "alignment": tag,
                              "acc": p["acc"], "sd": p["sd"], "chance": p["chance"],
                              "n_subjects": p["n_subjects"]})
-    write_rows("results/D_subject_id_both_paradigms.csv", rows)
+    write_rows("results/R4_person_vs_task.csv", rows)
 
 
 if __name__ == "__main__":

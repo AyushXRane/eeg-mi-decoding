@@ -155,3 +155,48 @@ Everything below was run and is in `EXPERIMENTS.md`. Mention only if asked.
   no brain effect to find, imagery collapses to chance and execution does not.
 - Signal is where physiology says: 9 motor channels (0.580) beat all 64 (0.556)
   beat frontal/occipital (0.521).
+
+---
+
+## R6 — Imagery or execution? (the brief suggests asking this)
+
+The brief says you may use executed runs, imagined runs, or both, and that
+asking whether a model trained on one transfers to the other is "fair game and
+possibly interesting." So I asked.
+
+**Imagery is the headline** for two reasons. It is the BCI-relevant problem — a
+paralysed user cannot execute a movement — and execution's famous "stronger
+signal" is partly not brain at all. I tested that: refit the whole pipeline at
+30–70 Hz, a band where the real neural effect does not exist.
+
+| | 8–30 Hz (real effect lives here) | 30–70 Hz (nothing should survive) |
+|---|---|---|
+| imagery | 0.556 | **0.526 — collapses to chance** |
+| execution | 0.625 | **0.559 — still decodable** |
+
+Execution stays decodable in a band where there is no brain signal to decode.
+That is muscle activity, which is broadband and sits closer to the electrodes
+than cortex does. Part of execution's advantage is not neural.
+
+**But I still trained across them both ways:**
+
+| | without alignment | with alignment |
+|---|---|---|
+| train imagery → test imagery | 0.556 | 0.641 |
+| **train execution → test imagery** | **0.577** | 0.641 |
+| train imagery → test execution | 0.590 | 0.684 |
+| train on both → test imagery | 0.556 | 0.656 |
+
+**Without alignment, training on execution beats training on imagery itself**
+(0.577 vs 0.556) — even though it has to cross two gaps at once, a new person
+*and* a different task. Executed trials give a cleaner signal, so the spatial
+filters are better estimated and they transfer.
+
+**With alignment that advantage disappears completely** — 0.641 either way. So
+execution was never teaching the model something extra about motor imagery. It
+was giving better estimates of the between-person differences that alignment
+already removes. Two routes to the same correction.
+
+**The line to say:** execution transfers to imagery surprisingly well, but only
+because it is a backdoor to the same fix alignment does directly. And its extra
+signal is partly muscle, which is why imagery is the number I defend.

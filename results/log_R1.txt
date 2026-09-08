@@ -1,0 +1,7 @@
+  -> results/G1_predict_config.csv (318 rows)
+G1 test-time EA = per_run                       0.695 +/- 0.157  [0.36-1.00]  n=106
+      per-subject CIs crossing chance: 46/106
+G1 test-time EA = per_subject                   0.688 +/- 0.148  [0.36-1.00]  n=106
+      per-subject CIs crossing chance: 53/106
+G1 test-time EA = none                          0.598 +/- 0.107  [0.40-0.89]  n=106
+      per-subject CIs crossing chance: 77/106
