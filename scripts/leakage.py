@@ -96,7 +96,7 @@ def main(a):
                            "gap_window_leak": (m - m2, float("nan")),
                            "gap_subject_leak": (m2 - m3, float("nan"))}.items():
             rows.append({"model": mname, "split": k, "acc": a, "sd": sd})
-    write_rows("results/B5_window_leakage.csv", rows)
+    write_rows("results/R2_window_leakage.csv", rows)
 
 
 if __name__ == "__main__":
