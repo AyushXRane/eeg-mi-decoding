@@ -47,7 +47,7 @@ def main(a):
         rows.append({"id": name, "pipeline": a.pipeline, "acc": s["mean"],
                      "sd": s["sd"], "min": s["min"], "max": s["max"],
                      "ci_cross_chance": cross, "n_subjects": s["n_subjects"]})
-    write_rows(f"results/E4_transfer_with_ea_{a.pipeline}.csv", rows)
+    write_rows(f"results/R6_transfer_with_alignment.csv", rows)
 
 
 if __name__ == "__main__":

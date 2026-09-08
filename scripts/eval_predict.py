@@ -47,7 +47,7 @@ def main(a):
             rows.append({"subject": int(s), "test_alignment": mode,
                          "acc": k / n, "n": n, "ci_lo": lo, "ci_hi": hi})
 
-    write_rows(f"results/G1_predict_config.csv", rows)
+    write_rows(f"results/R1_model_capability.csv", rows)
     for mode in ("per_run", "per_subject", "none"):
         r = [x for x in rows if x["test_alignment"] == mode]
         print("G1 " + line(r, f"test-time EA = {mode}"))

@@ -22,19 +22,28 @@ people, test on the 105th, repeat 105 times so every person is the test set once
 
 ---
 
-## 1. What the model can and cannot do  →  **0.658**
+## 1. What the model can and cannot do  →  **0.695**
 
-| test-time alignment | accuracy |
-|---|---|
-| aligned (what the CLI does) | **0.658** |
-| not aligned | **0.512 — chance** |
+All 106 subjects, leave-one-subject-out.
 
-Range across people: 0.38 to 1.00. Sixteen of thirty individually beat chance,
-none is below it, fourteen are inconclusive.
+| test-time alignment | accuracy | individuals beating chance |
+|---|---|---|
+| aligned (what the CLI does) | **0.695 ± 0.157** | **60 / 106** |
+| aligned per subject | 0.688 ± 0.148 | 53 / 106 |
+| not aligned | **0.598 ± 0.107** | 29 / 106 |
 
-**The line to say:** almost none of this is the classifier. Alignment is worth
-~11 points; the choice of model is worth ~2. Take the alignment away and the same
-trained model is at chance.
+Range across people: 0.36 to 1.00.
+
+**The line to say:** alignment is worth about 10 points — 0.695 with it, 0.598
+without. It is the single largest component in the pipeline, larger than the
+choice of classifier, which is worth about 2.
+
+**A correction worth telling them about.** At 30 subjects the unaligned model
+scored 0.512 — dead chance — and I was ready to claim the classifier does nothing
+without alignment. At 106 subjects it scores 0.598. With 105 training subjects
+instead of 29 the model is robust enough to survive the mismatch, so the dramatic
+collapse was partly a small-sample effect. This is the project's own lesson
+applied to itself: a striking number at n=30 was partly noise.
 
 ---
 
