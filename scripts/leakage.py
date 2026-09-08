@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import numpy as np
 from sklearn.base import clone
-from sklearn.model_selection import StratifiedKFold, GroupKFold, LeaveOneGroupOut
+from sklearn.model_selection import StratifiedKFold, GroupKFold
 
 from src.data import load_dataset, good_subjects, IMAGINED_RUNS
 from src.models import csp_lda
@@ -84,8 +84,11 @@ def main(a):
         print(f"B5 random 5-fold over WINDOWS      {m:.3f} +/- {s:.3f}   <- the leak")
         m2, s2 = score(GroupKFold(5).split(Xw, yw, tw), Xw, yw, pipe)
         print(f"B5 5-fold grouped by TRIAL         {m2:.3f} +/- {s2:.3f}")
-        m3, s3 = score(LeaveOneGroupOut().split(Xw, yw, gw), Xw, yw, pipe)
-        print(f"B5 leave-one-SUBJECT-out           {m3:.3f} +/- {s3:.3f}")
+        # 5-fold grouped by subject rather than leave-one-out: it answers the
+        # same question (no person in both train and test) and costs 5 fits
+        # instead of 106, which matters at 23k windows.
+        m3, s3 = score(GroupKFold(5).split(Xw, yw, gw), Xw, yw, pipe)
+        print(f"B5 5-fold grouped by SUBJECT       {m3:.3f} +/- {s3:.3f}")
         print(f"B5 window leakage  (random - by trial):    {(m-m2)*100:+.1f} pp")
         print(f"B5 subject leakage (by trial - by subject):{(m2-m3)*100:+.1f} pp")
         for k, (a, sd) in {"random_over_windows": (m, s), "grouped_by_trial": (m2, s2),
