@@ -1,8 +1,0 @@
-imagined (1350, 64, 481)  executed (1350, 64, 481)  30 subjects  (3s)
-
-== E. transfer between execution and imagery ==
-E1 train executed -> test imagined              0.577 +/- 0.107  [0.38-0.84]  n=30
-E2 train imagined -> test executed              0.590 +/- 0.088  [0.42-0.82]  n=30
-E3 train pooled exec+imag -> test imagined      0.556 +/- 0.093  [0.38-0.78]  n=30
-  -> results/E_transfer.csv (90 rows)
-[block E done in 2765s]
