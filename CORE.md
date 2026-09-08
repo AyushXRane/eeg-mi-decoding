@@ -17,8 +17,13 @@ Outside that band there is nothing to find. It also removes 60 Hz line noise and
 slow drift for free, which is most of the eye-blink energy — that is why there is
 no ICA step.
 
-Tested on **105 subjects**, evaluated **leave-one-subject-out**: train on 104
-people, test on the 105th, repeat 105 times so every person is the test set once.
+Tested on **all 106 usable subjects**, evaluated **leave-one-subject-out**:
+train on 105 people, test on the 106th, repeat 106 times so every person is the
+test set exactly once. Every number below is that.
+
+*(Sanity check: 20 random 80/20 grouped splits average 0.686 — the same answer —
+but individual draws range 0.633 to 0.739. Leave-one-out gives that number
+without depending on which people you happened to draw.)*
 
 ---
 
@@ -57,17 +62,17 @@ I built exactly that setup and ran a 1-nearest-neighbour classifier:
 
 | split | accuracy |
 |---|---|
-| shuffled **windows** | **0.979** |
-| grouped by **trial** | 0.539 |
-| grouped by **person** | 0.517 |
+| shuffled **windows** | **0.978** |
+| grouped by **trial** | 0.529 |
+| grouped by **person** | 0.507 |
 
-**0.979 from a model that learned nothing about motor imagery** — its nearest
+**0.978 from a model that learned nothing about motor imagery** — its nearest
 neighbour is just the window 0.25 s away from the same trial. That reproduces the
 84–89% range published on this dataset.
 
-**The line to say:** 44 points of that inflation is window overlap, 2 points is
-mixing people. So the standard advice — "use subject-wise splits" — is necessary
-and nowhere near sufficient.
+**The line to say:** **44.8 points** of that inflation is window overlap, only
+**2.3 points** is mixing people. So the standard advice — "use subject-wise
+splits" — is necessary and nowhere near sufficient. You have to group by trial.
 
 ---
 
@@ -78,13 +83,15 @@ times.
 
 | | |
 |---|---|
-| null mean | 0.501 |
-| **null 95th percentile** | **0.519** |
-| my result | 0.556 |
+| null mean | 0.500 |
+| **null 95th percentile** | **0.511** |
+| null maximum over 200 shuffles | 0.519 |
+| my result | **0.593** |
 | p | **0.005** |
 
-**The line to say:** chance is 0.50, but the number you have to beat is 0.519.
-My result clears it, by about four points. Not a landslide.
+**The line to say:** chance is 0.50, but the number you actually have to beat is
+0.511 — and no shuffle in 200 ever exceeded 0.519. My result clears that by
+eight points.
 
 ---
 
@@ -95,9 +102,11 @@ Same preprocessed data, two questions asked of it. Chance for "who is this?" is
 
 | | no alignment | **after alignment** |
 |---|---|---|
-| identity, from covariance | 0.946 | **0.026** |
-| **identity, from spectrum shape** | 0.861 | **0.928** |
-| identity, from absolute spectrum | 0.972 | 0.714 |
+| identity, from covariance | 0.947 | **0.027** |
+| **identity, from spectrum shape** | 0.865 | **0.926** |
+| identity, from absolute spectrum | 0.973 | 0.710 |
+
+Replicated on the executed runs: 0.827 → **0.905**. Not an imagery artifact.
 
 Alignment completely erases one fingerprint and leaves the other **untouched**.
 
@@ -108,7 +117,7 @@ passes straight through it. The third row proves it: absolute spectrum drops
 normalise. Pure shape does not move.
 
 **The line to say:** on the same data, the machine identifies *who you are* at
-0.93 against a 1-in-105 chance level, and *what you imagined* at 0.66. The
+0.93 against a 1-in-106 chance level, and *what you imagined* at 0.70. The
 field's standard correction for this removes half the problem.
 
 ---
@@ -117,8 +126,8 @@ field's standard correction for this removes half the problem.
 
 | model | train | test | gap |
 |---|---|---|---|
-| CSP + LDA (4 filters) | 0.548 | 0.534 | **1.4 pp** |
-| tangent space (2080 features) | **0.998** | 0.556 | **44 pp** |
+| CSP + LDA (4 filters) | 0.614 | 0.609 | **0.5 pp** |
+| tangent space (2080 features) | **0.882** | 0.593 | **28.9 pp** |
 
 **The line to say:** this is why there is no neural network here. My *linear*
 model already memorises the training set almost perfectly with 2080 parameters
@@ -189,22 +198,28 @@ than cortex does. Part of execution's advantage is not neural.
 
 **But I still trained across them both ways:**
 
-| | without alignment | with alignment |
-|---|---|---|
-| train imagery → test imagery | 0.556 | 0.641 |
-| **train execution → test imagery** | **0.577** | 0.641 |
-| train imagery → test execution | 0.590 | 0.684 |
-| train on both → test imagery | 0.556 | 0.656 |
+All 106 subjects, with alignment:
 
-**Without alignment, training on execution beats training on imagery itself**
-(0.577 vs 0.556) — even though it has to cross two gaps at once, a new person
-*and* a different task. Executed trials give a cleaner signal, so the spatial
-filters are better estimated and they transfer.
+| | accuracy |
+|---|---|
+| train imagery → test imagery | **0.688** |
+| train execution → test imagery | **0.674** |
+| train imagery → test execution | 0.715 |
+| train on both → test imagery | 0.687 |
 
-**With alignment that advantage disappears completely** — 0.641 either way. So
-execution was never teaching the model something extra about motor imagery. It
-was giving better estimates of the between-person differences that alignment
-already removes. Two routes to the same correction.
+**Training on execution decodes imagery almost as well as training on imagery
+itself** — 0.674 vs 0.688 — despite having to cross two gaps at once, a new
+person *and* a different task.
+
+At 30 subjects and *without* alignment, execution actually won (0.577 vs 0.556).
+Once you align, that advantage disappears. So execution was never teaching the
+model something extra about motor imagery — it was giving better estimates of
+the between-person differences that alignment already removes. Two routes to the
+same correction.
+
+Practically: to calibrate a new user you could have them **actually move**,
+which is easier and less error-prone than coaching imagery, and lose almost
+nothing.
 
 **The line to say:** execution transfers to imagery surprisingly well, but only
 because it is a backdoor to the same fix alignment does directly. And its extra

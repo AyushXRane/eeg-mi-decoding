@@ -1,1 +1,11 @@
 (4767, 64, 481), 106 subjects
+
+[3] permutation null over 200 within-subject shuffles
+    null mean 0.500   95th pct 0.511   max 0.519
+    observed  0.593   p = 0.0050
+  -> results/R3_permutation.csv (201 rows)
+
+[5] train vs test on the same folds
+    csp_lda        train 0.614   test 0.609   gap 0.5 pp
+    tangent_space  train 0.882   test 0.593   gap 28.9 pp
+  -> results/R5_fit_gap.csv (2 rows)

@@ -97,3 +97,21 @@ def permutation_null_fast(X, y, groups, n_perm=200, seed=0, n_jobs=-1):
 
     null = Parallel(n_jobs=n_jobs)(delayed(one)(seed + i) for i in range(n_perm))
     return np.array(null), float(np.mean(observed))
+
+
+def loso_cross(X_tr, y_tr, g_tr, X_te, y_te, g_te, pipe):
+    """Train on every other subject's data from one condition, test on the
+    held-out subject's data from another. Used for execution <-> imagery."""
+    rows = []
+    for s in np.unique(g_te):
+        tr = g_tr != s
+        te = g_te == s
+        if te.sum() == 0 or tr.sum() == 0:
+            continue
+        p = clone(pipe).fit(X_tr[tr], y_tr[tr])
+        pred = p.predict(X_te[te])
+        k, n = int((pred == y_te[te]).sum()), int(te.sum())
+        lo, hi = binomial_ci(k, n)
+        rows.append({"subject": int(s), "acc": k / n, "n": n,
+                     "ci_lo": lo, "ci_hi": hi})
+    return rows

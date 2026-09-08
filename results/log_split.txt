@@ -1,2 +1,5 @@
 106 subjects
 
+grouped 80/20, 20 different random draws:
+  mean 0.686   sd 0.021   range 0.633 - 0.739
+  -> a single 80/20 draw can land anywhere in a 11 point window

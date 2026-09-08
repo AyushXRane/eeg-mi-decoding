@@ -1,2 +1,28 @@
 [00:08] START R2 (budget 90 min)
 [Tue 00:12] START R2 (attempt 1, 106 subjects)
+[Tue 00:26] OK R2 after 14 min
+[Tue 00:26] START R6 (attempt 1, 106 subjects)
+[Tue 00:26] FAIL R6 attempt 1 (rc=0) -- see results/log_R6.txt
+      File "/Users/ayushrane/eeg-mi-decoding/scripts/transfer.py", line 15, in <module>
+        from src.evaluate import loso_cross, summarise
+    ImportError: cannot import name 'loso_cross' from 'src.evaluate' (/Users/ayushrane/eeg-mi-decoding/src/evaluate.py)
+[Tue 00:26] START R6 (attempt 2, 106 subjects)
+[Tue 00:26] FAIL R6 attempt 2 (rc=0) -- see results/log_R6.txt
+      File "/Users/ayushrane/eeg-mi-decoding/scripts/transfer.py", line 15, in <module>
+        from src.evaluate import loso_cross, summarise
+    ImportError: cannot import name 'loso_cross' from 'src.evaluate' (/Users/ayushrane/eeg-mi-decoding/src/evaluate.py)
+[Tue 00:27] START R6 (attempt 3, 106 subjects)
+[Tue 00:27] FAIL R6 attempt 3 (rc=0) -- see results/log_R6.txt
+      File "/Users/ayushrane/eeg-mi-decoding/scripts/transfer.py", line 15, in <module>
+        from src.evaluate import loso_cross, summarise
+    ImportError: cannot import name 'loso_cross' from 'src.evaluate' (/Users/ayushrane/eeg-mi-decoding/src/evaluate.py)
+[Tue 00:27] GAVE UP on R6 after 3 attempts
+[Tue 00:27] START SPLIT (attempt 1, 106 subjects)
+[Tue 00:29] OK SPLIT after 1 min
+[Tue 00:29] START R35 (attempt 1, 106 subjects)
+[Tue 08:39] OK R35 after 490 min
+[Tue 08:39] regenerating figures
+  -> R2_window_leakage.png
+  -> R3_permutation.png
+  -> R4_person_vs_task.png
+[Tue 08:39] ALL DONE -- every result at 106 subjects

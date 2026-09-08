@@ -3,3 +3,14 @@
 -- csp_lda
 B5 random 5-fold over WINDOWS      0.596 +/- 0.006   <- the leak
 B5 5-fold grouped by TRIAL         0.569 +/- 0.025
+B5 5-fold grouped by SUBJECT       0.586 +/- 0.023
+B5 window leakage  (random - by trial):    +2.6 pp
+B5 subject leakage (by trial - by subject):-1.6 pp
+
+-- knn_1_logvar
+B5 random 5-fold over WINDOWS      0.978 +/- 0.002   <- the leak
+B5 5-fold grouped by TRIAL         0.529 +/- 0.008
+B5 5-fold grouped by SUBJECT       0.507 +/- 0.010
+B5 window leakage  (random - by trial):    +44.8 pp
+B5 subject leakage (by trial - by subject):+2.3 pp
+  -> results/B5_window_leakage.csv (10 rows)

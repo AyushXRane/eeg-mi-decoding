@@ -1,0 +1,9 @@
+E4 imagined->imagined  +EA                   0.688 +/- 0.148  [0.36-1.00]  n=106
+      CIs crossing chance: 53/106
+E4 executed->imagined  +EA                   0.674 +/- 0.154  [0.38-1.00]  n=106
+      CIs crossing chance: 53/106
+E4 imagined->executed  +EA                   0.715 +/- 0.147  [0.38-1.00]  n=106
+      CIs crossing chance: 40/106
+E4 pooled  ->imagined  +EA                   0.687 +/- 0.148  [0.38-1.00]  n=106
+      CIs crossing chance: 53/106
+  -> results/R6_transfer_with_alignment.csv (4 rows)
