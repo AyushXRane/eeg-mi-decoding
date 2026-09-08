@@ -1,0 +1,17 @@
+
+imagined: (4767, 64, 481), 106 subjects, chance = 0.0094
+  logvar   no_EA: 0.9471 +/- 0.0158
+  logvar   EA   : 0.0267 +/- 0.0178
+  psd_rel  no_EA: 0.8645 +/- 0.0266
+  psd_rel  EA   : 0.9255 +/- 0.0264
+  psd_abs  no_EA: 0.9729 +/- 0.0082
+  psd_abs  EA   : 0.7104 +/- 0.1639
+
+executed: (4777, 64, 481), 106 subjects, chance = 0.0094
+  logvar   no_EA: 0.9401 +/- 0.0160
+  logvar   EA   : 0.0352 +/- 0.0252
+  psd_rel  no_EA: 0.8274 +/- 0.0381
+  psd_rel  EA   : 0.9048 +/- 0.0209
+  psd_abs  no_EA: 0.9759 +/- 0.0092
+  psd_abs  EA   : 0.6821 +/- 0.1486
+  -> results/D_subject_id_both_paradigms.csv (12 rows)

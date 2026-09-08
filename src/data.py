@@ -16,12 +16,18 @@ mne.set_log_level("ERROR")
 IMAGINED_RUNS = [4, 8, 12]
 EXECUTED_RUNS = [3, 7, 11]
 
-# Different papers drop different subjects here. These four are the ones that
-# actually break: their recordings use a different sampling rate or a different
-# trial duration from everyone else, so epochs come out the wrong shape.
+# Verified, not inherited. The usual published exclusion list is
+# S088/S089/S092/S100, but only three of those are actually broken: S088, S092
+# and S100 are recorded at 128 Hz with 5.12 s trials instead of 160 Hz and
+# 4.10 s, so their epochs come out the wrong shape.
+#
+# S089 is fine -- 160 Hz, 64 channels, 8/7 trials in every run, no flat
+# channels. Its only oddity is a low amplitude (~25 uV vs ~80 uV typical),
+# which is a recording gain difference, not corruption. It stays in.
+#
 # S038/S104/S106 get dropped in some curations for annotation problems but load
 # fine, so they stay in and get caught by the QC check in load_subject instead.
-BAD_SUBJECTS = [88, 89, 92, 100]
+BAD_SUBJECTS = [88, 92, 100]
 
 EXPECTED_SFREQ = 160.0
 EXPECTED_N_CHAN = 64
@@ -164,7 +170,12 @@ def load_dataset(subjects, runs, tmin=0.5, tmax=3.5, l_freq=8.0, h_freq=30.0,
                  np.concatenate(gs), np.concatenate(rs), names)
 
     if cache:
+        # Write to a unique temp file then rename. Several experiments run in
+        # parallel and build the same cache entry; a half-written .npz that
+        # another process then reads would fail confusingly.
         os.makedirs(CACHE_DIR, exist_ok=True)
-        np.savez_compressed(path, X=ds.X, y=ds.y, groups=ds.groups,
+        tmp = f"{path}.{os.getpid()}.tmp.npz"
+        np.savez_compressed(tmp, X=ds.X, y=ds.y, groups=ds.groups,
                             run=ds.run, ch_names=np.array(ds.ch_names))
+        os.replace(tmp, path)
     return ds
