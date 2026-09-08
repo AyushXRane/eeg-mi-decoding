@@ -96,3 +96,10 @@ systematically *mis*-identifiable across runs.
 - **Two hypotheses about leakage were falsified before the right one was found**
   (rows 17–19 and 20b). Recorded in order rather than rewritten to look like a
   straight line.
+
+### Follow-ups after the first full sweep
+
+| # | Experiment | Result | Conclusion |
+|---|-----------|--------|------------|
+| 34 | Subject-ID probes on **executed** runs (was imagery only) | logvar 0.962→0.053 under EA; psd_rel 0.914→**0.960**; psd_abs 0.982→0.793 | The fingerprint is not paradigm-specific. Every row lands within a few points of the imagery result, so it is a property of the person and of EA, not of motor imagery. |
+| 35 | E4 transfer **with** EA, csp_lda | imag→imag 0.641, exec→imag 0.641, imag→exec 0.684, pooled→imag **0.656** | EA and cross-task transfer do not stack. Execution's advantage (0.577 vs 0.556 unaligned) disappears once aligned (0.641 vs 0.641) — it was between-subject covariance structure, which EA already removes. Pooling flips from useless to mildly useful. |
