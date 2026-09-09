@@ -19,6 +19,17 @@ def main(a):
     runs = {"imagined": IMAGINED_RUNS, "executed": EXECUTED_RUNS,
             "both": IMAGINED_RUNS + EXECUTED_RUNS}[a.runs]
     subs = good_subjects(a.subjects)
+
+    # Hold a few subjects out of the shipped model on purpose. The brief says
+    # the graders will run predict.py "on subjects you did not use", and if the
+    # model is fit on all 106 there is no such subject left -- the only ones
+    # excluded are the three broken 128 Hz recordings, which predict.py refuses
+    # to load. These are the people it has genuinely never seen.
+    held = [int(x) for x in a.holdout.split(",")] if a.holdout else []
+    subs = [s for s in subs if s not in held]
+    if held:
+        print(f"held out (never seen by this model): {held}")
+
     ds = load_dataset(subs, runs)
     X = align_by_group(ds.X, ds.groups) if a.ea else ds.X
 
@@ -27,6 +38,7 @@ def main(a):
     joblib.dump({"pipeline": pipe, "ea": a.ea, "l_freq": 8.0, "h_freq": 30.0,
                  "tmin": 0.5, "tmax": 3.5, "runs": a.runs,
                  "train_subjects": [int(s) for s in np.unique(ds.groups)],
+                 "held_out_subjects": held,
                  "n_train_trials": int(len(ds.y)),
                  "classes": {0: "left_fist", 1: "right_fist"}}, a.out)
     print(f"saved {a.out}: {a.pipeline}, ea={a.ea}, "
@@ -40,5 +52,8 @@ if __name__ == "__main__":
     ap.add_argument("--pipeline", default="csp_lda", choices=list(PIPELINES))
     ap.add_argument("--ea", action="store_true", default=True)
     ap.add_argument("--no-ea", dest="ea", action="store_false")
+    ap.add_argument("--holdout", default="",
+                    help="comma-separated subject ids to exclude, so the graders "
+                         "have genuinely unseen people to test predict.py on")
     ap.add_argument("--out", default="models/csp_lda.joblib")
     main(ap.parse_args())

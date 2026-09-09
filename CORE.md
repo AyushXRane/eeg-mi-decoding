@@ -52,7 +52,7 @@ applied to itself: a striking number at n=30 was partly noise.
 
 ---
 
-## 2. Is the number an artifact of how I measured it?  →  **0.979 from nothing**
+## 2. Is the number an artifact of how I measured it?  →  **0.978 from nothing**
 
 Most EEG papers chop each trial into overlapping windows to multiply their sample
 count, then shuffle those windows into train and test. Two windows from the same
@@ -76,7 +76,7 @@ splits" — is necessary and nowhere near sufficient. You have to group by trial
 
 ---
 
-## 3. What is the real baseline?  →  **0.519, not 0.50**
+## 3. What is the real baseline?  →  **0.511, not 0.50**
 
 I shuffled the labels within each person and reran the entire evaluation 200
 times.
@@ -95,7 +95,7 @@ eight points.
 
 ---
 
-## 4. Person or task?  →  **0.93 vs 0.66**
+## 4. Person or task?  →  **0.93 vs 0.70**
 
 Same preprocessed data, two questions asked of it. Chance for "who is this?" is
 1/105 = **0.0095**.
@@ -122,7 +122,7 @@ field's standard correction for this removes half the problem.
 
 ---
 
-## 5. Learned or memorised?  →  **0.998 vs 0.556**
+## 5. Learned or memorised?  →  **0.882 vs 0.593**
 
 | model | train | test | gap |
 |---|---|---|---|
@@ -130,8 +130,8 @@ field's standard correction for this removes half the problem.
 | tangent space (2080 features) | **0.882** | 0.593 | **28.9 pp** |
 
 **The line to say:** this is why there is no neural network here. My *linear*
-model already memorises the training set almost perfectly with 2080 parameters
-and 1300 trials. A ConvNet would make that worse and harder to see. The simple
+model already opens a 29-point gap between what it has seen and what it has not,
+with 2080 parameters. A ConvNet would make that worse and harder to see. The simple
 model — four spatial filters — is both more accurate after alignment and honest
 about what it knows.
 
