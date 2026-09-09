@@ -176,6 +176,106 @@ Everything below was run and is in `EXPERIMENTS.md`. Mention only if asked.
 
 ---
 
+## The gap between the first number and the defended number
+
+The brief says: *"we expect the figure you end up defending to be considerably
+lower than the first figure you see. That gap is not a failure. Explaining it is
+most of the assignment."*
+
+Here is that gap, and every point of it is accounted for.
+
+| what I did | number |
+|---|---|
+| The setup a lot of published EEG work uses: cut trials into overlapping windows, shuffle them into train and test | **0.978** |
+| Stop letting windows from one trial straddle train and test | 0.529 |
+| Also keep each person entirely on one side of the split | 0.507 |
+| My actual pipeline, evaluated leave-one-subject-out | **0.695** |
+
+**0.978 → 0.695 is a 28-point drop, and I can name where it went:**
+
+- **44.8 points** were window overlap. Two windows from one trial share 87.5% of
+  their samples, so the test set is full of near-copies of training rows. A
+  1-nearest-neighbour classifier that has learned nothing about motor imagery
+  scores 0.978 this way, purely by finding the sibling window.
+- **2.3 points** were subject pooling — the thing everyone warns about, and by
+  far the smaller effect.
+- The remaining difference is my pipeline being genuinely better than 1-NN once
+  the cheating is removed.
+
+**The number I defend is 0.695**, on a person the model has never seen, with
+zero labels from them, against a permutation null whose 95th percentile is 0.511.
+
+That gap is the most useful thing in this project. It is not my model getting
+worse — it is a measurement of how much of the field's reported performance is
+an artifact of how the data was split.
+
+---
+
+## Why these experiments and not others
+
+Each result answers exactly one question the brief says it is assessing:
+
+| brief's question | result |
+|---|---|
+| explain your pipeline and noise handling | §0 |
+| what your model can and cannot do | R1 |
+| that the result is not an artifact of measurement | R2 |
+| what the appropriate baselines are | R3 + R7 |
+| how much is about the person rather than the task | R4 |
+| whether your model learned or memorised | R5 |
+| *(brief suggests it)* does execution transfer to imagery | R6 |
+
+**What I ran and then cut.** About 20 further experiments: ERD lateralisation per
+subject, a within-subject ceiling, a model-capacity ladder, per-subject alignment
+deltas, a learning curve over training-set size, and a CSP component sweep. They
+are in git history. I cut them because a submission I can defend line by line is
+worth more than one that lists everything I tried — and because several of them
+answered questions the brief did not ask.
+
+**Two I ran that failed, and kept.** I predicted subject pooling would inflate
+accuracy 15–30 points; it was ~2. I then predicted model capacity explained that;
+it did not. R2 is where that hunt actually ended, and it is a better answer than
+either prediction. Both failures are in `EXPERIMENTS.md` in the order they
+happened.
+
+---
+
+## Scope: why 106 subjects
+
+All 106 usable ones — every subject in the dataset except S088, S092 and S100,
+which are recorded at 128 Hz with 5.12 s trials and produce wrong-shaped epochs.
+
+I started with 30 and went to the full set for two reasons. The learning curve
+was still rising at 29 training subjects (0.580 → 0.613), so more people were
+still buying accuracy. And the person-versus-task result gets much harder to
+dismiss at full scale: identifying someone out of 106 candidates at 0.926 is a
+stronger claim than out of 30, because chance falls from 3.3% to 0.94%.
+
+It was worth it — accuracy rose from 0.658 to 0.695, and two claims that looked
+solid at 30 subjects turned out to be small-sample noise (see `NOTES.md`). That
+is the same lesson this project is about, applied to itself.
+
+**The commonly published exclusion list is S088/S089/S092/S100. I checked it
+rather than inheriting it, and S089 is fine** — 160 Hz, 64 channels, 8/7 trials
+per run, no dead channels. Its only oddity is a low recording gain (~25 µV
+against ~80 µV typical). So 106 usable subjects, not 105.
+
+---
+
+## On the time budget
+
+The brief allows 5–10 hours. AI wrote most of the implementation and ran the
+sweeps, which the brief explicitly permits. What that bought was breadth — I
+could run an experiment, have it falsify my prediction, and run the follow-up,
+three times over.
+
+`EXPERIMENTS.md` and `NOTES.md` record that process as it happened: the dead
+ends, the two falsified predictions, the three claims I retracted when more data
+contradicted them, and the numerical bug that produced a clean result supporting
+my own hypothesis before I caught it. The reasoning is mine; the typing was not.
+
+---
+
 ## R6 — Imagery or execution? (the brief suggests asking this)
 
 The brief says you may use executed runs, imagined runs, or both, and that
