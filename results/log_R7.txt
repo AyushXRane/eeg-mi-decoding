@@ -6,3 +6,8 @@
 (b) band control -- 30-70 Hz has no mu/beta effect to find
     imagined  8-30 Hz   0.688 +/- 0.148
     imagined  30-70 Hz   0.567 +/- 0.076
+    executed  8-30 Hz   0.713 +/- 0.137
+    executed  30-70 Hz   0.555 +/- 0.072
+  -> results/R7_where_is_signal.csv (7 rows)
+
+(c) -> results/R7_csp_patterns.png
