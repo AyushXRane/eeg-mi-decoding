@@ -61,9 +61,13 @@ def main(a):
     info = mne.create_info(ds.ch_names, 160.0, "eeg")
     info.set_montage(mne.channels.make_standard_montage("standard_1005"),
                      on_missing="ignore")
-    fig = csp.plot_patterns(info, ch_type="eeg", units="a.u.", size=1.4, show=False)
-    fig.suptitle("What the CSP filters weight (imagery, 8-30 Hz, all subjects)",
-                 fontsize=10)
+    # Only the 4 components the model actually uses -- plot_patterns defaults to
+    # all 64, which renders a useless strip of thumbnails.
+    fig = csp.plot_patterns(info, components=[0, 1, 2, 3], ch_type="eeg",
+                            units="a.u.", size=2.2, show=False)
+    fig.suptitle("The 4 CSP filters the model uses (imagery, 8-30 Hz, 106 subjects)\n"
+                 "red/blue = electrodes weighted most; hotspots sit over C3/C4",
+                 fontsize=11)
     fig.savefig("results/R7_csp_patterns.png", dpi=150)
     print("\n(c) -> results/R7_csp_patterns.png")
 
