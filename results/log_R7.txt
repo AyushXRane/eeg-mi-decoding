@@ -1,1 +1,8 @@
 (a) channel ablation, imagery
+    all_64           (64 ch)  0.688 +/- 0.148
+    motor_only       ( 9 ch)  0.667 +/- 0.149
+    non_motor_only   (11 ch)  0.568 +/- 0.082
+
+(b) band control -- 30-70 Hz has no mu/beta effect to find
+    imagined  8-30 Hz   0.688 +/- 0.148
+    imagined  30-70 Hz   0.567 +/- 0.076
